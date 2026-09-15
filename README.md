@@ -18,7 +18,7 @@ notifications and custom text with a real Home Assistant instance.
 
 <img src="assets/sign-in.png" width="420" alt="Home Assistant sign-in and notification settings">
 
-<img src="assets/rule-setup.png" width="420" alt="Creating a motion rule with a camera and optional custom text">
+<img src="assets/rule-editor.png" width="420" alt="Creating a motion rule with a camera and optional custom text">
 
 The setup screenshots were supplied by the maintainer just before the header
 tagline was restored in 0.4.0.
@@ -218,5 +218,5 @@ back up its `shell.json` entry before a reinstall if you want to retain rules.
 
 Faster video startup, WebRTC, searchable entity pickers,
 event-based doorbells, and additional camera/integration compatibility tests.
-The project is under active development and has not been submitted to the
-Omarchy plugin marketplace. Further improvements will follow user feedback.
+Marketplace listing requires maintainer approval. Further improvements will
+follow user feedback.
