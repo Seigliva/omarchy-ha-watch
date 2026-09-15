@@ -22,8 +22,8 @@ PanelWindow {
     property bool live: false
     visible: false
     color: "transparent"
-    implicitWidth: expanded ? 700 : 390
-    implicitHeight: camera ? (expanded ? 500 : 326) : 124 + activityLabel.implicitHeight
+    implicitWidth: expanded ? 700 : 360
+    implicitHeight: camera ? (expanded ? 500 : 300) : previewContent.implicitHeight + 24
     anchors.top: service.config.position.startsWith("top")
     anchors.bottom: service.config.position.startsWith("bottom")
     anchors.right: service.config.position.endsWith("right")
@@ -91,17 +91,18 @@ PanelWindow {
     }
     Rectangle {
         anchors.fill: parent
-        radius: 14
-        color: Color.background
-        border.color: Color.foreground
+        radius: Style.cornerRadius
+        color: Color.popups.background
+        border.color: Color.popups.border
         border.width: 1
         ColumnLayout {
+            id: previewContent
             anchors.fill: parent; anchors.margins: 12; spacing: 6
             RowLayout {
                 Layout.fillWidth: true
                 Label { text: popup.heading; textFormat: Text.PlainText; color: Color.foreground; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
-                ToolButton { text: popup.pinned ? "Unpin" : "Pin"; onClicked: { popup.pinned = !popup.pinned; if (!popup.pinned) closeTimer.restart() } }
-                ToolButton { text: "×"; onClicked: popup.dismiss() }
+                WatchButton { text: popup.pinned ? "Unpin" : "Pin"; onClicked: { popup.pinned = !popup.pinned; if (!popup.pinned) closeTimer.restart() } }
+                WatchButton { text: "×"; onClicked: popup.dismiss() }
             }
             Label {
                 id: activityLabel
@@ -125,8 +126,8 @@ PanelWindow {
             RowLayout {
                 Layout.fillWidth: true
                 Label { text: popup.detail; color: Color.foreground; opacity: 0.7; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
-                ToolButton { visible: popup.camera !== ""; text: popup.expanded ? "Smaller" : "Expand"; onClicked: popup.expanded = !popup.expanded }
-                ToolButton {
+                WatchButton { visible: popup.camera !== ""; text: popup.expanded ? "Smaller" : "Expand"; onClicked: popup.expanded = !popup.expanded }
+                WatchButton {
                     text: "Open HA"
                     onClicked: Qt.openUrlExternally(service.config.url + "/lovelace/0" + (popup.camera ? "?more-info-entity-id=" + encodeURIComponent(popup.camera) : ""))
                 }

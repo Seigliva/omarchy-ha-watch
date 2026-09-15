@@ -74,3 +74,35 @@ validator rejects the symlinks it contains.
 This verifies installation on the existing desktop, not a completely clean OS.
 Real camera playback and door notifications were previously tested by the
 maintainer. Additional camera brands and desktop environments remain untested.
+
+## Native panel checks
+
+Before publishing UI changes, test the locally installed version:
+
+- Open from the bar icon and `omarchy-shell ha-watch settings`; confirm that
+  it anchors at the icon and does not create a tiled application window.
+- Close with Escape, outside click and the icon. Reopen immediately and check
+  keyboard focus, Tab navigation and switching to another Omarchy panel.
+- Edit a cover: verify Opening/Open/Closing/Closed, existing selection and
+  custom text. Cancel must leave the saved rule unchanged.
+- Add, save, enable/disable and remove a temporary rule; removal takes a second
+  confirmation click. Check camera selection and text-only rules.
+- Open Settings and verify position, screen, duration and connection status.
+- Use Test for a text rule and a camera rule; check pin, expand and close.
+- Check long names/text, scrolling with many rules, another theme, bar position
+  and multiple monitors when available.
+
+Local UI previews can temporarily leave the installed checkout modified. Review
+and publish the development checkout before updating that installation; do not
+run an updater over unreviewed local changes.
+
+## Validation performed for 0.4.0
+
+- Sixteen automated tests pass, including a regression test ensuring live state
+  changes do not replace the entity selector model.
+- Plugin validation and shell script syntax checks pass.
+- The maintainer verified all UI functions and confirmed stable sensor scrolling.
+- Live camera playback, cover/contact notifications and custom text were verified
+  on the existing Home Assistant installation.
+- The native panel, rule editor, settings, keyboard dismissal and restored tagline
+  were loaded locally before publication.

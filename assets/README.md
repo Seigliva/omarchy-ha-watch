@@ -8,6 +8,10 @@
   owner, using the built-in image generation/editing tool. Only the blurred
   derivative is included here, not the original camera screenshot.
 
+- `sign-in.png` and `rule-setup.png`: unmodified screenshots supplied by the
+  project owner for publication, showing the compact panel before the tagline
+  was restored.
+
 The image-editing prompt was:
 
 > Edit this exact application screenshot for use in its GitHub README. Apply a

@@ -93,6 +93,7 @@ class Bridge:
         self.last_alert = {}
         self.paused_until = 0
         self.states = {}
+        self.entity_catalog = None
         self.auth_runner = None
         self.auth_state = None
         self.auth_expiry = 0
@@ -126,6 +127,7 @@ class Bridge:
         self.connection = None
         self.access = ""
         self.states = {}
+        self.entity_catalog = None
         self.preview_serial += 1
         emit("clear")
 
@@ -227,9 +229,14 @@ class Bridge:
 
     def emit_entities(self):
         rows = [{"id": s["entity_id"], "name": s.get("attributes", {}).get("friendly_name", s["entity_id"]),
-                 "state": s["state"], "deviceClass": s.get("attributes", {}).get("device_class", "")} for s in self.states.values()
+                 "deviceClass": s.get("attributes", {}).get("device_class", "")} for s in self.states.values()
                 if s["entity_id"].startswith(("camera.", "binary_sensor.", "input_boolean.", "cover."))]
-        emit("entities", entities=sorted(rows, key=lambda x: x["name"].casefold()))
+        # Live states belong to alert processing, not the selection model.
+        # Replacing that model on each state event resets an open dropdown.
+        rows.sort(key=lambda x: (x["name"].casefold(), x["id"]))
+        if rows != self.entity_catalog:
+            self.entity_catalog = rows
+            emit("entities", entities=rows)
 
     async def safe_preview(self, rule, state=None, attributes=None):
         try:

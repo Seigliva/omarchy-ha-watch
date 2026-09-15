@@ -49,6 +49,34 @@ class Rules(unittest.TestCase):
 
 
 class Integration(unittest.IsolatedAsyncioTestCase):
+    async def test_catalog_stays_stable_until_choices_change(self):
+        ident = "binary_sensor.door"
+        self.bridge.states = {ident: {"entity_id": ident, "state": "off",
+            "attributes": {"friendly_name": "Door", "device_class": "door"}}}
+        self.bridge.emit_entities()
+        self.assertEqual(len(self.events), 1)
+        for state in ["on", "off", "unavailable", "off"]:
+            self.bridge.states[ident]["state"] = state
+            self.bridge.states[ident]["attributes"]["battery_level"] = 90
+            self.bridge.emit_entities()
+        self.assertEqual(len(self.events), 1, "Live updates must not reset the selector")
+        self.bridge.states[ident]["attributes"]["friendly_name"] = "Basement door"
+        self.bridge.emit_entities()
+        self.assertEqual(self.events[-1]["entities"][0]["name"], "Basement door")
+        self.bridge.states[ident]["attributes"]["device_class"] = "window"
+        self.bridge.emit_entities()
+        self.assertEqual(self.events[-1]["entities"][0]["deviceClass"], "window")
+        self.bridge.states["cover.garage"] = {"entity_id": "cover.garage", "state": "closed"}
+        self.bridge.emit_entities()
+        self.assertEqual(len(self.events[-1]["entities"]), 2)
+        del self.bridge.states[ident]
+        self.bridge.emit_entities()
+        self.assertEqual([row["id"] for row in self.events[-1]["entities"]], ["cover.garage"])
+        await self.bridge.stop_connection()
+        self.bridge.emit_entities()
+        self.assertEqual(self.events[-1], {"type": "entities", "entities": []})
+        self.assertEqual(len(self.events), 7)
+
     async def test_opposite_states_and_event_text(self):
         base = await self.server()
         await self.bridge.configure({"url": base, "clientId": "http://127.0.0.1:1234/",

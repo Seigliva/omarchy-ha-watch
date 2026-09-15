@@ -5,15 +5,25 @@
 A small camera window when something happens at home. Sign in to Home Assistant,
 choose a sensor and a camera, and let Watch handle the desktop preview.
 
-**By Seigliva · Version 0.3.0 · Early release.**
+**By Seigliva · Version 0.4.0 · Early release.**
 
 An independent community plugin, not an official Home Assistant product.
 
- Built against Omarchy's Quickshell
-plugin API. The transport is tested against a simulated HA server; the initial version has also been tested successfully with a real HA instance,
-UniFi camera and door contact sensor. Cover support needs real-device testing.
+Built against Omarchy's Quickshell
+plugin API. The transport is tested against a simulated HA server. The maintainer
+has also verified the current UI, UniFi camera playback, door contacts, cover
+notifications and custom text with a real Home Assistant instance.
 
 ## Preview
+
+<img src="assets/sign-in.png" width="420" alt="Home Assistant sign-in and notification settings">
+
+<img src="assets/rule-setup.png" width="420" alt="Creating a motion rule with a camera and optional custom text">
+
+The setup screenshots were supplied by the maintainer just before the header
+tagline was restored in 0.4.0.
+
+Notification examples from the earlier layout:
 
 <img src="assets/garage-notification.png" width="420" alt="Garage door open notification">
 
@@ -37,7 +47,9 @@ was blurred with an image editing tool for privacy; it is sharp during normal us
 - One-hour pause and a 30-second cooldown per sensor/camera/state combination. Opposite states can notify immediately.
 - Automatic reconnect with backoff after connection loss or resume.
 - Uses the active monitor when set to Automatic; does not take keyboard focus.
-- Settings follow the Omarchy palette. UI text is currently English.
+- Compact native Omarchy bar panel with separate rule editor and settings.
+- Theme-aware controls and smaller notification previews. UI text is currently English.
+- Sensor lists stay in place during live Home Assistant state updates.
 
 ## Requirements
 
@@ -68,7 +80,7 @@ Python dependencies into the separate runtime directory and enables the plugin.
 It does not install system packages or request sudo. It also works from a
 separate development checkout, linking that checkout into the plugins directory.
 
-If you enabled the plugin before running setup, the settings window explains
+If you enabled the plugin before running setup, the panel explains
 that setup is required. Run `bash setup.sh` and restart the shell to retry.
 
 ### Upgrade from the original `ha.watch` ID
@@ -90,9 +102,9 @@ Open the house button in the bar, or run:
 omarchy-shell ha-watch settings
 ```
 
-1. Enter the base HA address, for example `http://homeassistant.local:8123`.
+1. Open **Settings** and enter the base HA address, for example `http://homeassistant.local:8123`.
 2. Select **Sign in**. Complete the normal Home Assistant login in your browser.
-3. Return to Watch. Choose **Device**, select **Notify when** states and **Show**, then **Add rule**.
+3. Return to Watch, go **Back** and select **+ Add rule**. Choose **Device**, select **Notify when** states and **Show**, then **Add rule**.
    Optionally enter custom text, such as “Kjellerdør åpnet”, for each selected state.
 4. Use **Test** to verify the camera without waiting for motion.
 5. Trigger real motion to verify the entire path. The device must transition to one of the selected states.
@@ -101,6 +113,11 @@ Use the HA address reachable from this desktop. The browser callback is on
 `127.0.0.1` and requires the browser to run on the same computer as the plugin.
 No public callback server, HA add-on, MQTT broker, camera password or RTSP URL
 is required by this design. The plugin never changes HA automations or devices.
+
+The bar icon opens a compact, theme-aware Omarchy panel. **Edit** opens a
+separate rule editor; **Settings** contains login and notification preferences.
+Press Escape or click outside to close the panel. Unsaved editor drafts stay
+in memory while the shell is running; only **Save changes** applies them.
 
 ## Camera compatibility
 
@@ -164,7 +181,7 @@ text-only popup to test placement without an HA connection.
 Implementation:
 
 - `Service.qml`: plugin lifecycle, settings persistence and private JSON IPC.
-- `Settings.qml`: connection, rules and window preferences.
+- `Settings.qml`: native bar panel, rule editor and connection/notification preferences.
 - `Preview.qml`: layer-shell camera surface and video player.
 - `bridge.py`: browser authorization, keyring and HA WebSocket transport.
 
@@ -210,7 +227,7 @@ back up its `shell.json` entry before a reinstall if you want to retain rules.
 
 ## Next milestones
 
-Real cover testing, faster video startup, WebRTC, searchable entity pickers,
+Faster video startup, WebRTC, searchable entity pickers,
 event-based doorbells, and additional camera/integration compatibility tests.
 The project is under active development and has not been submitted to the
-Omarchy plugin marketplace. Name, icon and visual design may change before listing.
+Omarchy plugin marketplace. Further improvements will follow user feedback.

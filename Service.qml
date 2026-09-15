@@ -13,7 +13,6 @@ Item {
     property string errorMessage: ""
     property bool ready: false
     property bool paused: false
-    property bool settingsOpen: false
     property string directory: Qt.resolvedUrl(".").toString().replace("file://", "")
 
     function loadConfig() {
@@ -95,13 +94,12 @@ Item {
     }
     IpcHandler {
         target: "ha-watch"
-        function settings(): string { root.settingsOpen = true; return "ok" }
-        function status(): string { return JSON.stringify({version: "0.3.0", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
+        function settings(): string { return root.shell && root.shell.summon("seigliva.ha-watch", "{}") ? "ok" : "Bar widget unavailable" }
+        function status(): string { return JSON.stringify({version: "0.4.0", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
         function demo(): string {
             preview.handle({type: "preview", serial: -1, title: "Preview test · Entrance", camera: "", duration: 20})
             return "ok"
         }
     }
-    Settings { service: root; visible: root.settingsOpen; onVisibleChanged: if (!visible) root.settingsOpen = false }
     Preview { id: preview; service: root }
 }

@@ -9,6 +9,29 @@ Ui.BarWidget {
     moduleName: "seigliva.ha-watch"
     implicitWidth: button.implicitWidth
     implicitHeight: button.implicitHeight
+    property bool opened: false
+    property bool popoutSwitchClosing: false
+    readonly property var service: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
+    function open() { if (service) opened = true }
+    function close() { opened = false }
+    function toggle() { opened ? close() : open() }
+    function closeForPopoutSwitch() {
+        popoutSwitchClosing = true
+        close()
+        Qt.callLater(function() { root.popoutSwitchClosing = false })
+    }
+    Loader {
+        active: root.service !== null
+        sourceComponent: Component {
+            Settings {
+                service: root.service
+                anchorItem: button
+                bar: root.bar
+                owner: root
+                open: root.opened
+            }
+        }
+    }
     Ui.BarIconButton {
         id: button
         anchors.fill: parent
@@ -20,6 +43,6 @@ Ui.BarWidget {
             }
         }
         tooltipText: "Home Assistant Watch"
-        onPressed: Quickshell.execDetached(["omarchy-shell", "ha-watch", "settings"])
+        onPressed: root.toggle()
     }
 }
