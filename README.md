@@ -83,18 +83,7 @@ separate development checkout, linking that checkout into the plugins directory.
 If you enabled the plugin before running setup, the panel explains
 that setup is required. Run `bash setup.sh` and restart the shell to retry.
 
-### Upgrade from the original `ha.watch` ID
-
-The new ID is `seigliva.ha-watch`. Before removing an old installation, run
-`python3 migrate.py` from the new checkout to preserve its existing settings.
-The setup script also runs this migration automatically. It changes only the
-plugin ID and saves a private backup beside `shell.json`. Existing rules,
-placement and connection settings are preserved. Credentials continue to use
-the original keyring service ID, so no new HA login is needed.
-
-If both IDs already have settings, migration stops rather than overwriting
-one. Resolve that conflict before continuing. After successful migration and
-installation, remove the old disabled `ha.watch` installation.
+## Connect Home Assistant
 
 Open the house button in the bar, or run:
 
