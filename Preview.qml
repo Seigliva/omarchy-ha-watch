@@ -25,9 +25,9 @@ PanelWindow {
     implicitWidth: expanded ? 700 : 390
     implicitHeight: camera ? (expanded ? 500 : 326) : 124 + activityLabel.implicitHeight
     anchors.top: service.config.position.startsWith("top")
-    anchors.bottom: !anchors.top
+    anchors.bottom: service.config.position.startsWith("bottom")
     anchors.right: service.config.position.endsWith("right")
-    anchors.left: !anchors.right
+    anchors.left: service.config.position.endsWith("left")
     margins { top: 48; bottom: 20; left: 20; right: 20 }
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
