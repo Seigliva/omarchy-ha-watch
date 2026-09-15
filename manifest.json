@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "ha.watch",
+  "name": "Home Assistant Watch",
+  "version": "0.2.0",
+  "author": "Home Assistant Watch contributors",
+  "description": "Sign in to Home Assistant and turn sensor activity into camera previews.",
+  "kinds": ["service", "bar-widget"],
+  "keepLoaded": true,
+  "entryPoints": {"service": "Service.qml", "barWidget": "BarWidget.qml"},
+  "barWidget": {"displayName": "Home Assistant Watch", "category": "Home", "allowMultiple": false, "defaultSection": "right"}
+}
