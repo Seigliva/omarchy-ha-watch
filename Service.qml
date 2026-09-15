@@ -24,7 +24,7 @@ Item {
         for (var section of ["left", "center", "right"])
             entries = entries.concat(layout[section] || [])
         for (var entry of entries) {
-            if (entry.id === "ha.watch") {
+            if (entry.id === "seigliva.ha-watch") {
                 config = Object.assign({rules: [], duration: 20, position: "top-right", monitor: ""}, entry)
                 if (ready) send({type: "configure", config: config})
                 return
@@ -33,7 +33,7 @@ Item {
     }
     function save(values) {
         config = Object.assign({}, config, values)
-        if (shell) shell.updateEntryInline("ha.watch", config)
+        if (shell) shell.updateEntryInline("seigliva.ha-watch", config)
         send({type: "configure", config: config})
     }
     function send(value) {
@@ -69,13 +69,18 @@ Item {
     }
     Process {
         id: bridge
-        command: [root.directory + ".venv/bin/python", "-u", root.directory + "bridge.py"]
+        command: ["bash", root.directory + "run-bridge.sh"]
         stdinEnabled: true
         running: true
         stdout: SplitParser { onRead: line => root.handle(line) }
         // Do not forward transport/library output, which can contain camera URLs.
-        onExited: {
+        onExited: function(exitCode) {
             root.ready = false
+            if (exitCode === 78) {
+                root.state = "setup_required"
+                root.message = "Run bash setup.sh in the plugin folder to finish installation."
+                return
+            }
             root.state = "offline"
             root.message = "Connection service stopped. Check the plugin dependencies."
             preview.dismiss()
@@ -91,7 +96,7 @@ Item {
     IpcHandler {
         target: "ha-watch"
         function settings(): string { root.settingsOpen = true; return "ok" }
-        function status(): string { return JSON.stringify({state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
+        function status(): string { return JSON.stringify({version: "0.3.0", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
         function demo(): string {
             preview.handle({type: "preview", serial: -1, title: "Preview test · Entrance", camera: "", duration: 20})
             return "ok"

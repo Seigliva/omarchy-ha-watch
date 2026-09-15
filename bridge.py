@@ -65,6 +65,8 @@ async def keyring(action, base, client, value=None):
     args = ["secret-tool", action]
     if action == "store":
         args += ["--label=Home Assistant Watch"]
+    # Keep the original credential service ID: a display/plugin namespace
+    # change must not require users to reauthorize their HA instance.
     args += ["application", "ha.watch", "instance", base, "client", client]
     proc = await asyncio.create_subprocess_exec(*args, stdin=asyncio.subprocess.PIPE,
                                                stdout=asyncio.subprocess.PIPE,

@@ -1,11 +1,26 @@
+<p align="center"><img src="assets/house-eye.svg" width="80" alt="House with an eye"></p>
+
 # Home Assistant Watch for Omarchy
 
 A small camera window when something happens at home. Sign in to Home Assistant,
 choose a sensor and a camera, and let Watch handle the desktop preview.
 
-**Version 0.2.0 — local testing preview.** Built against Omarchy's Quickshell
+**By Seigliva · Version 0.3.0 · Early release.**
+
+An independent community plugin, not an official Home Assistant product.
+
+ Built against Omarchy's Quickshell
 plugin API. The transport is tested against a simulated HA server; the initial version has also been tested successfully with a real HA instance,
 UniFi camera and door contact sensor. Cover support needs real-device testing.
+
+## Preview
+
+<img src="assets/garage-notification.png" width="420" alt="Garage door open notification">
+
+<img src="assets/camera-preview-blurred.png" width="420" alt="Camera motion notification with a blurred camera image">
+
+The screenshots show the working plugin. The camera area in the second image
+was blurred with an image editing tool for privacy; it is sharp during normal use.
 
 ## What works in this version
 
@@ -34,25 +49,40 @@ On Arch the relevant packages are `python`, `libsecret`, `xdg-utils`,
 `qt6-multimedia`, and `qt6-multimedia-ffmpeg`. A Secret Service provider must
 already be available (as in a standard configured Omarchy desktop).
 
-Python dependencies are isolated in `.venv/`; system Python is untouched.
+Python dependencies live in `${XDG_DATA_HOME:-~/.local/share}/seigliva.ha-watch/venv`,
+outside the plugin checkout. System Python is untouched, and Omarchy can
+validate and update the plugin without encountering virtual-environment symlinks.
 
-## Installation from a checkout
+## Install
 
-From this directory:
+First install the system requirements listed above, then:
 
 ```bash
+omarchy plugin add https://github.com/Seigliva/omarchy-ha-watch.git --yes
+cd ~/.config/omarchy/plugins/seigliva.ha-watch
 bash setup.sh
 ```
 
-The script creates the virtual environment, installs the pinned Python
-dependencies, links this checkout into `~/.config/omarchy/plugins/ha.watch`,
-rescans plugins and enables the bar button. It refuses to replace an existing,
-different plugin directory. It does not install system packages.
+Omarchy clones and validates the repository. `setup.sh` installs the pinned
+Python dependencies into the separate runtime directory and enables the plugin.
+It does not install system packages or request sudo. It also works from a
+separate development checkout, linking that checkout into the plugins directory.
 
-The Omarchy plugin installer only clones the repository: it does not run
-`setup.sh` or install Python dependencies. If you install through
-`omarchy plugin add`, run `bash setup.sh` inside the installed plugin directory
-before enabling it. The `.venv` is created locally and is not part of the repository.
+If you enabled the plugin before running setup, the settings window explains
+that setup is required. Run `bash setup.sh` and restart the shell to retry.
+
+### Upgrade from the original `ha.watch` ID
+
+The new ID is `seigliva.ha-watch`. Before removing an old installation, run
+`python3 migrate.py` from the new checkout to preserve its existing settings.
+The setup script also runs this migration automatically. It changes only the
+plugin ID and saves a private backup beside `shell.json`. Existing rules,
+placement and connection settings are preserved. Credentials continue to use
+the original keyring service ID, so no new HA login is needed.
+
+If both IDs already have settings, migration stops rather than overwriting
+one. Resolve that conflict before continuing. After successful migration and
+installation, remove the old disabled `ha.watch` installation.
 
 Open the house button in the bar, or run:
 
@@ -101,7 +131,7 @@ following Omarchy's Do Not Disturb setting.
 
 ## Storage and privacy
 
-Non-secret configuration is inline in the `ha.watch` entry in
+Non-secret configuration is inline in the `seigliva.ha-watch` entry in
 `~/.config/omarchy/shell.json`. The plugin follows the shell's persistence API.
 Refresh tokens are stored only in the keyring, access tokens stay in the
 connection process, and camera URLs are passed in memory to the player.
@@ -120,7 +150,7 @@ Disabling or removing the plugin does not itself revoke an HA session.
 ## Development and validation
 
 ```bash
-.venv/bin/python -m unittest discover -s tests -v
+~/.local/share/seigliva.ha-watch/venv/bin/python -m unittest discover -s tests -v
 omarchy-shell ha-watch status
 omarchy-shell ha-watch demo
 ```
@@ -145,26 +175,38 @@ Reference APIs: [HA authentication](https://developers.home-assistant.io/docs/au
 ## Disable
 
 ```bash
-omarchy plugin disable ha.watch
+omarchy plugin disable seigliva.ha-watch
 ```
 
 Sign out first if you also want to revoke the connection.
 
-To remove an installation managed by Omarchy, use `omarchy plugin remove ha.watch`.
+To remove an installation managed by Omarchy, use `omarchy plugin remove seigliva.ha-watch`.
 For a development checkout installed with `setup.sh`, disable the plugin and
-remove only the `~/.config/omarchy/plugins/ha.watch` symlink, leaving your checkout
+remove only the `~/.config/omarchy/plugins/seigliva.ha-watch` symlink, leaving your checkout
 intact. Neither operation changes cameras or automations in Home Assistant.
 
-## Updating during development
+## Update
 
-Pull the latest commits and rerun `bash setup.sh` if dependencies changed.
-If the UI still shows an older version after a plugin rescan, run
-`omarchy restart shell`, then reopen Watch. This briefly restarts the bar and
-shell surfaces, while preserving your saved rules and HA session.
+```bash
+omarchy plugin update seigliva.ha-watch --yes
+cd ~/.config/omarchy/plugins/seigliva.ha-watch
+bash setup.sh
+```
 
-To validate a release, run `omarchy plugin validate` on a clean checkout or
-Git archive before creating `.venv`. The validator rejects symlinks, including
-those in a local Python virtual environment.
+For a separate development checkout, use `git pull --ff-only` and `bash setup.sh`.
+If the UI still shows an older version, run `omarchy restart shell`, then reopen
+Watch. This briefly restarts the bar and shell surfaces, while preserving rules
+and the HA session.
+
+`omarchy plugin validate .` works on the installed checkout: the runtime is
+stored outside it. Do not create a Python virtual environment inside an
+installed plugin folder.
+
+Uninstalling preserves the separate runtime and keyring credentials. Sign out
+first to revoke the HA session. You may then delete the dedicated
+`~/.local/share/seigliva.ha-watch` directory to remove the runtime as well.
+Omarchy may remove the inline rule settings when disabling or removing a plugin;
+back up its `shell.json` entry before a reinstall if you want to retain rules.
 
 ## Next milestones
 

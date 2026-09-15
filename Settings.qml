@@ -32,6 +32,10 @@ FloatingWindow {
         selectedCamera = r.camera || ""
         selectedStates = (r.states || RuleOptions.defaults(r.sensor)).slice()
         customMessages = Object.assign({}, r.messages || {})
+        Qt.callLater(function() {
+            scroller.contentItem.contentY = Math.max(0, Math.min(editorHeading.y,
+                scroller.contentItem.contentHeight - scroller.contentItem.height))
+        })
     }
     function storeRule() {
         if (selected(sensors, selectedSensor) < 0 || (selectedCamera && selected(cameras, selectedCamera) < 0)) return
@@ -59,6 +63,7 @@ FloatingWindow {
         return found ? found.name : ident
     }
     ScrollView {
+        id: scroller
         anchors.fill: parent
         anchors.margins: 24
         contentWidth: availableWidth
@@ -70,6 +75,11 @@ FloatingWindow {
             Label {
                 text: "A little window into your home."
                 color: Color.foreground; opacity: 0.65
+            }
+            Label {
+                text: "By Seigliva · Independent Home Assistant plugin · 0.3.0"
+                color: Color.foreground; opacity: 0.65; font.pixelSize: 12
+                wrapMode: Text.WordWrap; Layout.fillWidth: true
             }
             Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: Color.foreground; opacity: 0.15 }
             Label {
@@ -151,6 +161,12 @@ FloatingWindow {
                         }
                     }
                 }
+            }
+            Label {
+                id: editorHeading
+                text: win.editIndex >= 0 ? "Editing: " + win.label(win.selectedSensor) : "Add an activity rule"
+                textFormat: Text.PlainText; font.pixelSize: 18; font.bold: true
+                color: Color.foreground; wrapMode: Text.WordWrap; Layout.fillWidth: true
             }
             GridLayout {
                 columns: 2; Layout.fillWidth: true
