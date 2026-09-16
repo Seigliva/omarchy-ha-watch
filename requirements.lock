@@ -665,3 +665,7 @@ yarl==1.24.5 \
     --hash=sha256:5c88e5815a49d289e599f3513aa7fde0bc2092ff188f99c940f007f90f53d104 \
     --hash=sha256:cf139c02f5f23ef6532040a30ff662c00a318c952334f211046b8e60b7f17688 \
     --hash=sha256:a33700d13d9b7d84fd10947b09ff69fb9a792e519c8cb9764a3ca70baa6c23a7
+
+# Required by aiohttp/aiosignal on older supported Python versions.
+typing_extensions==4.16.0 \
+    --hash=sha256:481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
