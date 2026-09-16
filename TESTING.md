@@ -106,3 +106,14 @@ run an updater over unreviewed local changes.
   on the existing Home Assistant installation.
 - The native panel, rule editor, settings, keyboard dismissal and restored tagline
   were loaded locally before publication.
+
+## Dependency integrity (0.4.1)
+
+Setup and CI require hashes and accept wheels only. The setup regression tests
+use offline fixture wheels and fresh temporary runtimes to verify successful
+installation, rejection of tampered bytes, and rejection of missing hashes.
+They do not touch the user's installed runtime or Home Assistant configuration.
+
+The actual locked dependencies must also install in a fresh environment, followed
+by `python -m pip check` and the complete test suite. CI repeats this on Python
+3.11 and 3.14.

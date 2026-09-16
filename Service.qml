@@ -95,7 +95,7 @@ Item {
     IpcHandler {
         target: "ha-watch"
         function settings(): string { return root.shell && root.shell.summon("seigliva.ha-watch", "{}") ? "ok" : "Bar widget unavailable" }
-        function status(): string { return JSON.stringify({version: "0.4.0", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
+        function status(): string { return JSON.stringify({version: "0.4.1", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
         function demo(): string {
             preview.handle({type: "preview", serial: -1, title: "Preview test · Entrance", camera: "", duration: 20})
             return "ok"

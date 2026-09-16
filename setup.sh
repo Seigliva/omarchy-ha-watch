@@ -16,7 +16,7 @@ if [[ "$setup_mode" != "--dependencies-only" && ( -e "$plugin_target" || -L "$pl
     }
 fi
 python3 -m venv "$runtime_dir"
-"$runtime_dir/bin/python" -m pip install -r "$plugin_root/requirements.lock"
+"$runtime_dir/bin/python" -m pip install --require-hashes --only-binary=:all: -r "$plugin_root/requirements.lock"
 [[ "$setup_mode" != "--dependencies-only" ]] || exit 0
 python3 "$plugin_root/migrate.py"
 mkdir -p -- "$(dirname -- "$plugin_target")"

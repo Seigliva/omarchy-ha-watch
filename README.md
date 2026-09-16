@@ -5,7 +5,7 @@
 A small camera window when something happens at home. Sign in to Home Assistant,
 choose a sensor and a camera, and let Watch handle the desktop preview.
 
-**By Seigliva · Version 0.4.0 · Early release.**
+**By Seigliva · Version 0.4.1 · Early release.**
 
 An independent community plugin, not an official Home Assistant product.
 
@@ -21,7 +21,7 @@ notifications and custom text with a real Home Assistant instance.
 <img src="assets/rule-editor.png" width="420" alt="Creating a motion rule with a camera and optional custom text">
 
 The setup screenshots were supplied by the maintainer just before the header
-tagline was restored in 0.4.0.
+tagline was restored in 0.4.1.
 
 Notification examples from the earlier layout:
 
@@ -65,6 +65,13 @@ Python dependencies live in `${XDG_DATA_HOME:-~/.local/share}/seigliva.ha-watch/
 outside the plugin checkout. System Python is untouched, and Omarchy can
 validate and update the plugin without encountering virtual-environment symlinks.
 
+Installation uses pip's mandatory `--require-hashes` mode and accepts wheels
+only (`--only-binary=:all:`). Every permitted package file has a SHA-256 recorded
+in `requirements.lock`; missing or mismatched hashes stop installation. A Python
+version/platform without an approved compatible wheel is rejected instead of
+building from source. Existing installed packages are not retroactively audited
+by pip; use a fresh runtime when verifying artifact integrity.
+
 ## Install
 
 First install the system requirements listed above, then:
@@ -75,9 +82,9 @@ cd ~/.config/omarchy/plugins/seigliva.ha-watch
 bash setup.sh
 ```
 
-Omarchy clones and validates the repository. `setup.sh` installs the pinned
+Omarchy clones and validates the repository. `setup.sh` installs the version- and SHA-256-locked
 Python dependencies into the separate runtime directory and enables the plugin.
-It does not install system packages or request sudo. It also works from a
+No sudo or pkexec is required. The script does not install system packages. It also works from a
 separate development checkout, linking that checkout into the plugins directory.
 
 If you enabled the plugin before running setup, the panel explains
@@ -220,3 +227,17 @@ Faster video startup, WebRTC, searchable entity pickers,
 event-based doorbells, and additional camera/integration compatibility tests.
 Marketplace listing requires maintainer approval. Further improvements will
 follow user feedback.
+
+## Updating dependency hashes
+
+`requirements.lock` records exact versions and verified hashes for non-yanked
+PyPI wheels, including transitive dependencies. `requirements.txt` describes the
+direct dependency range and is not used by setup or CI.
+
+To refresh artifacts for the existing pins, run
+`python3 scripts/lock-dependencies.py`. The maintainer-only script downloads each
+wheel over HTTPS, computes its SHA-256, checks it against PyPI metadata, and
+writes the lock only after all downloads verify. It never runs during installation
+and does not update versions. Review any changed pins/artifacts, test a fresh
+installation, and commit the lock before publishing. Hashes bind the reviewed
+files; they are not a security audit of third-party code.
