@@ -6,7 +6,7 @@ runtime_dir="${XDG_DATA_HOME:-$HOME/.local/share}/seigliva.ha-watch/venv"
 setup_mode="${1:-}"
 [[ -z "$setup_mode" || "$setup_mode" == "--dependencies-only" ]] || { echo 'Usage: bash setup.sh [--dependencies-only]' >&2; exit 1; }
 
-for dependency in python3 secret-tool xdg-open omarchy-shell; do
+for dependency in python3 secret-tool xdg-open omarchy-shell ffmpeg ffprobe; do
     command -v "$dependency" >/dev/null || { echo "Missing dependency: $dependency" >&2; exit 1; }
 done
 if [[ "$setup_mode" != "--dependencies-only" && ( -e "$plugin_target" || -L "$plugin_target" ) ]]; then

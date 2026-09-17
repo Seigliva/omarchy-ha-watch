@@ -5,7 +5,7 @@
 A small camera window when something happens at home. Sign in to Home Assistant,
 choose a sensor and a camera, and let Watch handle the desktop preview.
 
-**By Seigliva · Version 0.4.1 · Early release.**
+**By Seigliva · Version 0.5.0 · Early release.**
 
 An independent community plugin, not an official Home Assistant product.
 
@@ -21,7 +21,7 @@ notifications and custom text with a real Home Assistant instance.
 <img src="assets/rule-editor.png" width="420" alt="Creating a motion rule with a camera and optional custom text">
 
 The setup screenshots were supplied by the maintainer just before the header
-tagline was restored in 0.4.1.
+tagline was restored in 0.5.0.
 
 Notification examples from the earlier layout:
 
@@ -55,10 +55,10 @@ was blurred with an image editing tool for privacy; it is sharp during normal us
 
 Omarchy with the **Quickshell shell and `omarchy plugin` commands**, Python 3.11+
 with venv support, `secret-tool` and an unlocked Secret Service keyring,
-`xdg-open`, and Qt Multimedia with its FFmpeg backend.
+`xdg-open`, and the `ffmpeg` and `ffprobe` command-line tools.
 
 On Arch the relevant packages are `python`, `libsecret`, `xdg-utils`,
-`qt6-multimedia`, and `qt6-multimedia-ffmpeg`. A Secret Service provider must
+`ffmpeg`. A Secret Service provider must
 already be available (as in a standard configured Omarchy desktop).
 
 Python dependencies live in `${XDG_DATA_HOME:-~/.local/share}/seigliva.ha-watch/venv`,
@@ -118,14 +118,24 @@ in memory while the shell is running; only **Save changes** applies them.
 ## Camera compatibility
 
 Watch talks to HA, not to UniFi, Reolink or other manufacturers directly.
-This version requests the common `camera/stream` HLS endpoint. A camera that
-only exposes WebRTC or still images may fall back to snapshots. Playback also
-depends on the codecs available on the desktop. HLS can take several seconds
-to start and can lag the live scene; low-latency WebRTC is future work.
+This version requests HA's `camera/stream` HLS endpoint. A bounded helper fetches
+playlists and segments, then separate FFmpeg processes decode the video. The
+Omarchy shell receives only local, fixed-size RGB images: 640 × 360 at up to
+10 frames per second, without audio. HLS can take several seconds to start and
+lag the live scene. WebRTC-only cameras fall back to snapshots when available.
 
-Snapshots refresh every five seconds while video is unavailable. Signed
-snapshot URLs currently last one hour; reopen a preview pinned longer than
-that to refresh its snapshot access. Snapshot refresh stops while video plays.
+Snapshot refresh is every five seconds while video is unavailable. Snapshot
+and video inputs have byte limits, deadlines and dimension checks; unsupported
+or oversized video falls back to the same bounded snapshot path. A pinned
+preview stops fetching after ten minutes and must be reopened. Each preview
+also has a 256 MiB transfer budget. Pinning protects the active preview from
+replacement, and closing it terminates its decoder and removes temporary files.
+
+The supported HLS subset includes unencrypted MPEG-TS and fragmented MP4.
+Encrypted or byte-range streams are rejected. Streams above 4096 pixels on
+either axis or 8 megapixels are rejected; choose a lower-resolution HA camera
+entity if necessary. See [MEDIA_SECURITY.md](MEDIA_SECURITY.md) for all limits
+and the separation between the network client, decoder and shell.
 
 Only real state changes from a known state trigger rules. Initial states and
 recovery from `unknown` or `unavailable` do not create alerts. Existing rules

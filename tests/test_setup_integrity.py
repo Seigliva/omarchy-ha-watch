@@ -36,7 +36,7 @@ class SetupIntegrity(unittest.TestCase):
             commands = root / "bin"
             commands.mkdir()
             (commands / "python3").symlink_to(sys.executable)
-            for name in ["secret-tool", "xdg-open", "omarchy-shell"]:
+            for name in ["secret-tool", "xdg-open", "omarchy-shell", "ffmpeg", "ffprobe"]:
                 command = commands / name
                 command.write_text("#!/bin/sh\nexit 0\n")
                 command.chmod(0o700)

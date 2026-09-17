@@ -117,3 +117,16 @@ They do not touch the user's installed runtime or Home Assistant configuration.
 The actual locked dependencies must also install in a fresh environment, followed
 by `python -m pip check` and the complete test suite. CI repeats this on Python
 3.11 and 3.14.
+
+## Bounded media validation (0.5.0)
+
+The complete suite includes bounded HTTP downloads, compression expansion,
+image dimensions, URL/HLS validation, separate FFmpeg decoding, cancellation,
+backpressure and fallback. A real Home Assistant/UniFi fragmented-MP4 stream
+produced 216 live frames over a 25-second diagnostic run; live output was also
+visually confirmed in the actual Omarchy panel.
+
+After installation, test camera startup, Pin/Unpin, closing and replacing a
+preview, text-only notifications and fallback. Camera decoding must never use
+Qt Multimedia or a remote Image URL. Verify expired previews stop their helper
+and local files are removed after dismissal. See MEDIA_SECURITY.md for limits.

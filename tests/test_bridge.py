@@ -8,6 +8,7 @@ import aiohttp
 from aiohttp import web
 
 from bridge import Bridge, normalize_url, triggered, notification_text
+from test_camera_media import png
 
 
 class Rules(unittest.TestCase):
@@ -99,7 +100,11 @@ class Integration(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         self.events = []
-        self.emit_patch = patch("bridge.emit", side_effect=lambda kind, **values: self.events.append({"type": kind, **values}))
+        def capture(kind, **values):
+            self.events.append({"type": kind, **values})
+            if kind == "image" and self.bridge.media:
+                self.bridge.media.acknowledge(values["frame"])
+        self.emit_patch = patch("bridge.emit", side_effect=capture)
         self.emit_patch.start()
         self.keyring = AsyncMock(return_value="refresh-test")
         self.key_patch = patch("bridge.keyring", self.keyring)
@@ -152,6 +157,9 @@ class Integration(unittest.IsolatedAsyncioTestCase):
         app = web.Application()
         app.router.add_post("/auth/token", token)
         app.router.add_get("/api/websocket", websocket)
+        async def snapshot(request):
+            return web.Response(body=png(), content_type="image/png")
+        app.router.add_get("/api/camera_proxy/camera.front", snapshot)
         self.runner = web.AppRunner(app)
         await self.runner.setup()
         site = web.TCPSite(self.runner, "127.0.0.1", 0)
@@ -176,8 +184,8 @@ class Integration(unittest.IsolatedAsyncioTestCase):
         rows = await self.wait_event("entities")
         self.assertEqual(len(rows["entities"]), 2)
         await self.motion()
-        video = await self.wait_event("video")
-        self.assertEqual(video["url"], base + "/api/hls/test/master_playlist.m3u8")
+        image = await self.wait_event("image")
+        self.assertTrue(image["url"].startswith("file://"))
         self.assertTrue(any(e["type"] == "image" for e in self.events))
         await self.motion()
         await asyncio.sleep(0.05)
@@ -220,11 +228,12 @@ class Integration(unittest.IsolatedAsyncioTestCase):
             if kind == "auth/sign_path":
                 return {"path": "/api/camera_proxy/camera.front?authSig=test"}
             return {"url": "https://unrelated.invalid/stream"}
-        self.bridge.config = {"url": "http://ha.local"}
+        base = await self.server()
+        self.bridge.config = {"url": base}
         self.bridge.rpc = rpc
         await self.bridge.preview({"camera": "camera.front"})
-        self.assertTrue(any(e["type"] == "image" for e in self.events))
-        self.assertTrue(any(e["type"] == "video_unavailable" for e in self.events))
+        await self.wait_event("image")
+        await self.wait_event("video_unavailable")
         self.assertFalse(any(e["type"] == "video" for e in self.events))
 
 

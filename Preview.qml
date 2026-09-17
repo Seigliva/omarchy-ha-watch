@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtMultimedia
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -14,12 +13,13 @@ PanelWindow {
     property string heading: ""
     property string camera: ""
     property string imageUrl: ""
-    property string videoUrl: ""
+    property int frameId: 0
     property string detail: ""
     property string activityText: ""
     property bool pinned: false
     property bool expanded: false
     property bool live: false
+    property bool liveUnavailable: false
     visible: false
     color: "transparent"
     implicitWidth: expanded ? 700 : 360
@@ -36,24 +36,22 @@ PanelWindow {
 
     function dismiss() {
         visible = false
-        player.stop()
-        videoUrl = ""
         imageUrl = ""
         still.source = ""
         live = false
         closeTimer.stop()
-        service.send({type: "dismiss"})
+        service.send({type: "dismiss", serial: popup.serial})
     }
     function handle(p) {
         if (p.type === "preview") {
             // A pinned preview remains under the user's control.
             if (visible && pinned) return
-            player.stop()
             serial = p.serial
             heading = p.title
             camera = p.camera
-            imageUrl = ""; videoUrl = ""; still.source = ""; live = false
+            imageUrl = ""; still.source = ""; live = false
             activityText = p.message || "Activity detected"
+            liveUnavailable = false
             detail = camera ? "Connecting to camera…" : ""
             pinned = false; expanded = false
             var name = service.config.monitor || (Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : "")
@@ -63,32 +61,18 @@ PanelWindow {
             closeTimer.interval = Math.max(5, Math.min(120, p.duration || 20)) * 1000
             closeTimer.restart()
         } else if (p.serial === serial && visible) {
-            if (p.type === "image") { imageUrl = p.url; still.source = imageUrl }
-            else if (p.type === "video") { videoUrl = p.url; player.play() }
-            else if (p.type === "video_unavailable") detail = "Snapshot · live stream unavailable"
+            if (p.type === "image" && p.url.startsWith("file://")) {
+                frameId = p.frame
+                live = !!p.live
+                detail = live ? "Live · muted" : (liveUnavailable ? "Snapshot · live stream unavailable" : "Snapshot · connecting to live…")
+                imageUrl = p.url
+                still.source = imageUrl
+            }
+            else if (p.type === "video_unavailable") { live = false; liveUnavailable = true; detail = "Snapshot · live stream unavailable" }
+            else if (p.type === "media_error") { live = false; detail = p.message }
         }
     }
     Timer { id: closeTimer; onTriggered: if (!popup.pinned) popup.dismiss() }
-    Timer {
-        interval: 5000; repeat: true; running: popup.visible && popup.imageUrl !== "" && !popup.live
-        onTriggered: {
-            // Signed HA URLs include the query parameters in their signature.
-            // Reload the uncached image without modifying the signed URL.
-            still.source = ""
-            Qt.callLater(function() { if (popup.visible && !popup.live) still.source = popup.imageUrl })
-        }
-    }
-    MediaPlayer {
-        id: player
-        source: popup.videoUrl
-        videoOutput: video
-        audioOutput: AudioOutput { muted: true }
-        onErrorOccurred: { popup.live = false; popup.detail = "Snapshot · video could not start" }
-    }
-    Connections {
-        target: video.videoSink
-        function onVideoFrameChanged() { popup.live = true; popup.detail = "Live · muted" }
-    }
     Rectangle {
         anchors.fill: parent
         radius: Style.cornerRadius
@@ -101,7 +85,7 @@ PanelWindow {
             RowLayout {
                 Layout.fillWidth: true
                 Label { text: popup.heading; textFormat: Text.PlainText; color: Color.foreground; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
-                WatchButton { text: popup.pinned ? "Unpin" : "Pin"; onClicked: { popup.pinned = !popup.pinned; if (!popup.pinned) closeTimer.restart() } }
+                WatchButton { text: popup.pinned ? "Unpin" : "Pin"; onClicked: { popup.pinned = !popup.pinned; service.send({type: "pin", serial: popup.serial, pinned: popup.pinned}); if (!popup.pinned) closeTimer.restart() } }
                 WatchButton { text: "×"; onClicked: popup.dismiss() }
             }
             Label {
@@ -114,11 +98,20 @@ PanelWindow {
             Item {
                 visible: popup.camera !== ""
                 Layout.fillWidth: true; Layout.fillHeight: true
-                Image { id: still; anchors.fill: parent; fillMode: Image.PreserveAspectFit; cache: false; asynchronous: true; visible: !popup.live }
-                VideoOutput { id: video; anchors.fill: parent; visible: popup.live; fillMode: VideoOutput.PreserveAspectFit }
+                Image {
+                    id: still
+                    anchors.fill: parent
+                    fillMode: Image.PreserveAspectFit
+                    sourceSize: Qt.size(640, 360)
+                    cache: false
+                    asynchronous: true
+                    retainWhileLoading: true
+                    onStatusChanged: if (status === Image.Ready || status === Image.Error)
+                        service.send({type: "frame_ready", serial: popup.serial, frame: popup.frameId})
+                }
                 Label {
                     anchors.centerIn: parent
-                    visible: !popup.live && still.status !== Image.Ready
+                    visible: still.status !== Image.Ready
                     text: still.status === Image.Error ? "Camera image unavailable" : "Loading camera…"
                     color: Color.foreground
                 }

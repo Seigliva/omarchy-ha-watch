@@ -12,6 +12,8 @@ from urllib.parse import urlencode, urlsplit
 import aiohttp
 from aiohttp import web
 
+from camera_media import CameraMedia
+
 
 def emit(kind, **values):
     print(json.dumps({"type": kind, **values}), flush=True)
@@ -98,6 +100,10 @@ class Bridge:
         self.auth_state = None
         self.auth_expiry = 0
         self.preview_serial = 0
+        self.media = None
+        self.media_task = None
+        self.preview_pinned = False
+        self.preview_lock = asyncio.Lock()
         self.access = ""
 
     def spawn(self, coro):
@@ -119,7 +125,16 @@ class Bridge:
         finally:
             self.pending.pop(ident, None)
 
+    async def stop_media(self):
+        if self.media_task:
+            self.media_task.cancel()
+            await asyncio.gather(self.media_task, return_exceptions=True)
+        self.media_task = None
+        self.media = None
+
     async def stop_connection(self):
+        await self.stop_media()
+        self.preview_pinned = False
         if self.connection:
             self.connection.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -245,6 +260,13 @@ class Bridge:
             emit("error", message="Could not open the camera. Check the connection and try again.")
 
     async def preview(self, rule, state=None, attributes=None):
+        async with self.preview_lock:
+            if self.preview_pinned:
+                return
+            await self.stop_media()
+            await self.start_preview(rule, state, attributes)
+
+    async def start_preview(self, rule, state=None, attributes=None):
         camera = rule.get("camera", "")
         self.preview_serial += 1
         serial = self.preview_serial
@@ -259,26 +281,8 @@ class Bridge:
             raise ValueError("Invalid camera")
         base = normalize_url(self.config["url"])
         emit("preview", serial=serial, title=name, message=message, camera=camera, duration=self.config.get("duration", 20))
-        async def snapshot():
-            try:
-                path = await self.rpc("auth/sign_path", path="/api/camera_proxy/" + camera, expires=3600)
-                if serial == self.preview_serial:
-                    emit("image", serial=serial, url=base + path["path"])
-            except Exception:
-                pass
-        async def stream():
-            try:
-                result = await self.rpc("camera/stream", entity_id=camera, format="hls")
-                path = result["url"]
-                # Accept only HA-relative URLs: no credentials or streams sent to another host.
-                if not path.startswith("/") or path.startswith("//"):
-                    raise ValueError("Unexpected stream URL")
-                if serial == self.preview_serial:
-                    emit("video", serial=serial, url=base + path)
-            except Exception:
-                if serial == self.preview_serial:
-                    emit("video_unavailable", serial=serial)
-        await asyncio.gather(snapshot(), stream())
+        self.media = CameraMedia(base, self.rpc, emit, serial)
+        self.media_task = self.spawn(self.media.run(camera))
 
     async def login(self, value):
         base = normalize_url(value)
@@ -344,8 +348,17 @@ class Bridge:
                 self.spawn(self.safe_preview(data.get("rule", {})))
             elif kind == "pause":
                 self.paused_until = time.monotonic() + (3600 if data.get("paused") else 0)
+            elif kind == "frame_ready":
+                if self.media and data.get("serial") == self.preview_serial:
+                    self.media.acknowledge(data.get("frame"))
+            elif kind == "pin":
+                if data.get("serial") == self.preview_serial:
+                    self.preview_pinned = bool(data.get("pinned"))
             elif kind == "dismiss":
-                self.preview_serial += 1
+                if data.get("serial", self.preview_serial) == self.preview_serial:
+                    self.preview_serial += 1
+                    self.preview_pinned = False
+                    await self.stop_media()
             elif kind == "logout":
                 base, client = self.config.get("url"), self.config.get("clientId")
                 await self.stop_connection()

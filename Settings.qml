@@ -530,7 +530,7 @@ Ui.KeyboardPanel {
                         }
                     }
                     Label {
-                        text: "Video is muted. Repeated notifications for the same state are limited to one every 30 seconds. Opposite states can notify immediately."
+                        text: "Video previews are muted, up to 10 fps. Pinned previews stop after 10 minutes. Repeated notifications for the same state are limited to one every 30 seconds. Opposite states can notify immediately."
                         color: Color.foreground
                         opacity: 0.65
                         font.pixelSize: 12
@@ -539,7 +539,7 @@ Ui.KeyboardPanel {
                     }
 
                     Label {
-                        text: "By Seigliva · 0.4.1"
+                        text: "By Seigliva · 0.5.0"
                         color: Color.foreground
                         opacity: 0.55
                         font.pixelSize: 11
