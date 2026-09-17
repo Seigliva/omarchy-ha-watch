@@ -20,6 +20,7 @@ PanelWindow {
     property bool expanded: false
     property bool live: false
     property bool liveUnavailable: false
+    property bool hasFrame: false
     visible: false
     color: "transparent"
     implicitWidth: expanded ? 700 : 360
@@ -36,6 +37,7 @@ PanelWindow {
 
     function dismiss() {
         visible = false
+        hasFrame = false
         imageUrl = ""
         still.source = ""
         live = false
@@ -46,6 +48,7 @@ PanelWindow {
         if (p.type === "preview") {
             // A pinned preview remains under the user's control.
             if (visible && pinned) return
+            hasFrame = false
             serial = p.serial
             heading = p.title
             camera = p.camera
@@ -106,12 +109,17 @@ PanelWindow {
                     cache: false
                     asynchronous: true
                     retainWhileLoading: true
-                    onStatusChanged: if (status === Image.Ready || status === Image.Error)
-                        service.send({type: "frame_ready", serial: popup.serial, frame: popup.frameId})
+                    onStatusChanged: {
+                        if (status === Image.Ready) popup.hasFrame = true
+                        if (status === Image.Error && popup.hasFrame)
+                            popup.detail = "Camera frame unavailable · waiting for next frame"
+                        if (status === Image.Ready || status === Image.Error)
+                            service.send({type: "frame_ready", serial: popup.serial, frame: popup.frameId})
+                    }
                 }
                 Label {
                     anchors.centerIn: parent
-                    visible: still.status !== Image.Ready
+                    visible: !popup.hasFrame
                     text: still.status === Image.Error ? "Camera image unavailable" : "Loading camera…"
                     color: Color.foreground
                 }
