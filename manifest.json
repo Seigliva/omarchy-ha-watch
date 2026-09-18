@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "seigliva.ha-watch",
   "name": "Home Assistant Watch",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "author": "Seigliva",
   "description": "Sign in to Home Assistant and turn sensor activity into camera previews.",
   "kinds": ["service", "bar-widget"],

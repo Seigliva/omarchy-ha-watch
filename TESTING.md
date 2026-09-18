@@ -130,3 +130,12 @@ After installation, test camera startup, Pin/Unpin, closing and replacing a
 preview, text-only notifications and fallback. Camera decoding must never use
 Qt Multimedia or a remote Image URL. Verify expired previews stop their helper
 and local files are removed after dismissal. See MEDIA_SECURITY.md for limits.
+
+## Token response bounds (0.5.1)
+
+`test_token_responses.py` exercises both actual login and refresh paths with
+oversized Content-Length responses, chunked overflow, compressed expansion,
+malformed JSON, invalid token fields and incorrect content type. Rejected login
+responses never reach the keyring; rejected refresh responses never initiate
+WebSocket authentication. Separate checks cover the exact 64 KiB boundary,
+normal responses, timeout enforcement and rejection before JSON parsing.

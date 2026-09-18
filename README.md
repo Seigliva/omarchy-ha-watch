@@ -5,7 +5,7 @@
 A small camera window when something happens at home. Sign in to Home Assistant,
 choose a sensor and a camera, and let Watch handle the desktop preview.
 
-**By Seigliva · Version 0.5.0 · Early release.**
+**By Seigliva · Version 0.5.1 · Early release.**
 
 An independent community plugin, not an official Home Assistant product.
 
@@ -21,7 +21,7 @@ notifications and custom text with a real Home Assistant instance.
 <img src="assets/rule-editor.png" width="420" alt="Creating a motion rule with a camera and optional custom text">
 
 The setup screenshots were supplied by the maintainer just before the header
-tagline was restored in 0.5.0.
+tagline was restored in 0.5.1.
 
 Notification examples from the earlier layout:
 
@@ -156,6 +156,9 @@ following Omarchy's Do Not Disturb setting.
 
 Non-secret configuration is inline in the `seigliva.ha-watch` entry in
 `~/.config/omarchy/shell.json`. The plugin follows the shell's persistence API.
+Login and refresh token responses are streamed through a 64 KiB limit before
+JSON parsing. Compressed, oversized and invalid responses are rejected; the
+35-second request timeout remains in effect.
 Refresh tokens are stored only in the keyring, access tokens stay in the
 connection process, and camera URLs are passed in memory to the player.
 The auth callback uses a random, single-use state value and expires after

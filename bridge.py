@@ -15,6 +15,37 @@ from aiohttp import web
 from camera_media import CameraMedia
 
 
+TOKEN_RESPONSE_LIMIT = 64 * 1024
+
+
+async def read_token_response(response, *, require_refresh=False):
+    """Read only bounded, uncompressed JSON; never include tokens in errors."""
+    response.raise_for_status()
+    if (response.status != 200
+            or response.headers.get("Content-Encoding", "identity").lower() != "identity"
+            or response.content_type != "application/json"):
+        raise ValueError("Invalid Home Assistant token response.")
+    if response.content_length is not None and response.content_length > TOKEN_RESPONSE_LIMIT:
+        response.close()
+        raise ValueError("Home Assistant token response exceeds the size limit.")
+    body = bytearray()
+    async for chunk in response.content.iter_chunked(4096):
+        if len(body) + len(chunk) > TOKEN_RESPONSE_LIMIT:
+            response.close()
+            raise ValueError("Home Assistant token response exceeds the size limit.")
+        body.extend(chunk)
+    try:
+        token = json.loads(body.decode("utf-8"))
+    except (ValueError, UnicodeError, RecursionError):
+        raise ValueError("Invalid Home Assistant token response.") from None
+    fields = ("access_token", "refresh_token") if require_refresh else ("access_token",)
+    if not isinstance(token, dict) or any(
+            not isinstance(token.get(field), str) or not token[field] or len(token[field]) > 16384
+            for field in fields):
+        raise ValueError("Invalid Home Assistant token response.")
+    return token
+
+
 def emit(kind, **values):
     print(json.dumps({"type": kind, **values}), flush=True)
 
@@ -170,12 +201,13 @@ class Bridge:
                 emit("status", state="connecting", message="Connecting to Home Assistant…")
                 async with self.http.post(base + "/auth/token", data={
                     "grant_type": "refresh_token", "refresh_token": refresh, "client_id": client},
-                    allow_redirects=False) as response:
+                    allow_redirects=False, auto_decompress=False, read_bufsize=4096,
+                    headers={"Accept-Encoding": "identity"}) as response:
                     if response.status in (400, 401, 403):
                         emit("status", state="signed_out", message="Your session expired. Please sign in again.")
                         return
                     response.raise_for_status()
-                    token = await response.json()
+                    token = await read_token_response(response)
                 self.access = token["access_token"]
                 async with self.http.ws_connect(base + "/api/websocket", heartbeat=30) as ws:
                     self.ws = ws
@@ -306,9 +338,10 @@ class Bridge:
             try:
                 async with self.http.post(base + "/auth/token", data={
                     "grant_type": "authorization_code", "code": code, "client_id": client},
-                    allow_redirects=False) as response:
+                    allow_redirects=False, auto_decompress=False, read_bufsize=4096,
+                    headers={"Accept-Encoding": "identity"}) as response:
                     response.raise_for_status()
-                    token = await response.json()
+                    token = await read_token_response(response, require_refresh=True)
                 await keyring("store", base, client, token["refresh_token"])
                 different_instance = bool(self.config.get("url") and self.config["url"] != base)
                 config = {**self.config, "url": base, "clientId": client}
@@ -368,7 +401,8 @@ class Bridge:
                         # Supported by both older and newer HA versions.
                         try:
                             async with self.http.post(base + "/auth/token", data={"action": "revoke", "token": refresh},
-                                                      allow_redirects=False) as response:
+                                                      allow_redirects=False, auto_decompress=False, read_bufsize=4096,
+                                                      headers={"Accept-Encoding": "identity"}) as response:
                                 response.raise_for_status()
                         except Exception:
                             emit("error", message="Signed out locally. HA was unreachable; revoke the session in your HA profile if needed.")
