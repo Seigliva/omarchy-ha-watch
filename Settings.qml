@@ -93,6 +93,14 @@ Ui.KeyboardPanel {
 
     FocusScope {
         id: focusScope
+        Connections {
+            target: service
+            function onNeedsSetupChanged() {
+                if (!service.needsSetup)
+                    win.page = "settings";
+            }
+        }
+
         anchors.fill: parent
         Keys.onEscapePressed: event => {
             win.close();
@@ -146,6 +154,7 @@ Ui.KeyboardPanel {
                         Layout.fillWidth: true
                     }
                     WatchButton {
+                        visible: !service.needsSetup
                         text: service.paused ? "Resume" : "Pause 1h"
                         onClicked: service.togglePause()
                     }
@@ -165,7 +174,70 @@ Ui.KeyboardPanel {
                     opacity: 0.12
                 }
                 ColumnLayout {
-                    visible: win.page === "rules"
+                    visible: service.needsSetup
+                    Layout.fillWidth: true
+                    spacing: 10
+                    Label {
+                        text: "Finish installation"
+                        color: Color.foreground
+                        font.bold: true
+                        font.pixelSize: 16
+                    }
+                    Label {
+                        text: "Watch needs a few Python packages before you can sign in. Choose Finish installation to download and verify them. No administrator access is requested."
+                        color: Color.foreground
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Label {
+                        text: service.setupMessage
+                        textFormat: Text.PlainText
+                        color: Color.foreground
+                        opacity: 0.75
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    ProgressBar {
+                        visible: service.installing
+                        indeterminate: true
+                        Layout.fillWidth: true
+                    }
+                    RowLayout {
+                        WatchButton {
+                            text: service.installing ? "Installing…" : service.state === "setup_failed" ? "Try again" : "Finish installation"
+                            enabled: !service.installing
+                            onClicked: service.installRuntime()
+                        }
+                        WatchButton {
+                            text: "Check again"
+                            enabled: !service.installing
+                            onClicked: service.retryConnection()
+                        }
+                    }
+                    Label {
+                        text: "Prefer the terminal? Run this command from any folder, then select Check again:"
+                        color: Color.foreground
+                        opacity: 0.65
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    TextArea {
+                        Layout.fillWidth: true
+                        readOnly: true
+                        selectByMouse: true
+                        wrapMode: TextEdit.Wrap
+                        text: "bash '" + service.directory.replace(/'/g, "'\"'\"'") + "setup.sh' --dependencies-only"
+                        color: Color.foreground
+                        font.pixelSize: 11
+                        background: Rectangle {
+                            color: Qt.alpha(Color.foreground, 0.04)
+                            radius: 4
+                        }
+                    }
+                }
+                ColumnLayout {
+                    visible: !service.needsSetup && win.page === "rules"
                     Layout.fillWidth: true
                     spacing: 8
                     Label {
@@ -276,7 +348,7 @@ Ui.KeyboardPanel {
                     }
                 }
                 ColumnLayout {
-                    visible: win.page === "edit"
+                    visible: !service.needsSetup && win.page === "edit"
                     Layout.fillWidth: true
                     spacing: 10
                     Label {
@@ -430,7 +502,7 @@ Ui.KeyboardPanel {
                     }
                 }
                 ColumnLayout {
-                    visible: win.page === "settings"
+                    visible: !service.needsSetup && win.page === "settings"
                     Layout.fillWidth: true
                     spacing: 10
                     WatchButton {
@@ -539,7 +611,7 @@ Ui.KeyboardPanel {
                     }
 
                     Label {
-                        text: "By Seigliva · 0.5.1"
+                        text: "By Seigliva · 0.6.0"
                         color: Color.foreground
                         opacity: 0.55
                         font.pixelSize: 11

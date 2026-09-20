@@ -5,7 +5,7 @@
 A small camera window when something happens at home. Sign in to Home Assistant,
 choose a sensor and a camera, and let Watch handle the desktop preview.
 
-**By Seigliva · Version 0.5.1 · Early release.**
+**By Seigliva · Version 0.6.0 · Early release.**
 
 An independent community plugin, not an official Home Assistant product.
 
@@ -21,7 +21,7 @@ notifications and custom text with a real Home Assistant instance.
 <img src="assets/rule-editor.png" width="420" alt="Creating a motion rule with a camera and optional custom text">
 
 The setup screenshots were supplied by the maintainer just before the header
-tagline was restored in 0.5.1.
+tagline was restored in 0.6.0.
 
 Notification examples from the earlier layout:
 
@@ -74,21 +74,37 @@ by pip; use a fresh runtime when verifying artifact integrity.
 
 ## Install
 
-First install the system requirements listed above, then:
+Install from the marketplace, or run:
 
 ```bash
 omarchy plugin add https://github.com/Seigliva/omarchy-ha-watch.git --yes
-cd ~/.config/omarchy/plugins/seigliva.ha-watch
-bash setup.sh
 ```
 
-Omarchy clones and validates the repository. `setup.sh` installs the version- and SHA-256-locked
-Python dependencies into the separate runtime directory and enables the plugin.
-No sudo or pkexec is required. The script does not install system packages. It also works from a
-separate development checkout, linking that checkout into the plugins directory.
+Click the house icon in the bar, then **Finish installation**. The panel explains
+what will be downloaded and shows progress. Installation starts only when you
+click the button; it installs the SHA-256-locked Python wheels into the separate
+user runtime. No sudo or pkexec is required. It does not install system packages
+or change your Home Assistant connection/rules. Missing system tools are reported
+in the panel; see Requirements above.
 
-If you enabled the plugin before running setup, the panel explains
-that setup is required. Run `bash setup.sh` and restart the shell to retry.
+When setup succeeds, the connection service starts automatically and the panel
+opens the sign-in settings. **No shell restart or terminal is needed.** If setup
+fails, check the displayed guidance and select **Try again**. Closing the panel
+does not interrupt setup. Stopping the shell cancels it; reopen Watch and retry.
+
+For manual setup, this command works from any directory:
+
+```bash
+bash ~/.config/omarchy/plugins/seigliva.ha-watch/setup.sh --dependencies-only
+```
+
+Then select **Check again** in the panel. The panel also provides a selectable
+command using the exact installation path, including custom config locations.
+Manual setup shows detailed package-manager errors that are intentionally not
+forwarded into the panel because custom index URLs can contain credentials.
+
+For development checkouts, `bash setup.sh` still installs the runtime, links the
+checkout into the plugin directory when appropriate and enables the plugin.
 
 ## Connect Home Assistant
 

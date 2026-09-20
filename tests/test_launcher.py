@@ -20,8 +20,18 @@ class Launcher(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="ha watch ") as folder:
             python = Path(folder) / "seigliva.ha-watch/venv/bin/python"
             python.parent.mkdir(parents=True)
-            python.write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
+            python.write_text('#!/bin/sh\n[ \"$1\" = -c ] && exit 0\nprintf "%s\\n" "$@"\n')
             python.chmod(0o700)
             run = subprocess.run(["bash", str(ROOT / "run-bridge.sh")], env={**os.environ, "XDG_DATA_HOME": folder}, capture_output=True, text=True)
             self.assertEqual(run.returncode, 0)
             self.assertEqual(run.stdout.splitlines(), ["-u", str(ROOT / "bridge.py")])
+
+    def test_incomplete_runtime_offers_setup(self):
+        with tempfile.TemporaryDirectory() as folder:
+            python = Path(folder) / "seigliva.ha-watch/venv/bin/python"
+            python.parent.mkdir(parents=True)
+            python.write_text('#!/bin/sh\nexit 1\n')
+            python.chmod(0o700)
+            run = subprocess.run(["bash", str(ROOT / "run-bridge.sh")], env={**os.environ, "XDG_DATA_HOME": folder}, capture_output=True, text=True)
+            self.assertEqual(run.returncode, 78)
+            self.assertEqual(json.loads(run.stdout)["state"], "setup_required")

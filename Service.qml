@@ -13,7 +13,27 @@ Item {
     property string errorMessage: ""
     property bool ready: false
     property bool paused: false
-    property string directory: Qt.resolvedUrl(".").toString().replace("file://", "")
+    readonly property bool needsSetup: state === "setup_required" || state === "setup_running" || state === "setup_failed"
+    property bool installing: false
+    property string setupMessage: "Install the required packages to connect Home Assistant."
+    function installRuntime() {
+        if (!needsSetup || installing) return
+        restartTimer.stop()
+        errorMessage = ""
+        installing = true
+        state = "setup_running"
+        message = "Installing required packages…"
+        setupMessage = "Starting installation…"
+        installer.running = true
+    }
+    function retryConnection() {
+        if (installing || bridge.running) return
+        restartTimer.stop()
+        state = "starting"
+        message = "Checking installation…"
+        bridge.running = true
+    }
+    property string directory: decodeURIComponent(Qt.resolvedUrl(".").toString().replace("file://", "")).replace(/\/?$/, "/")
 
     function loadConfig() {
         if (!shell) return
@@ -77,13 +97,32 @@ Item {
             root.ready = false
             if (exitCode === 78) {
                 root.state = "setup_required"
-                root.message = "Run bash setup.sh in the plugin folder to finish installation."
+                root.message = "First-time setup required"
                 return
             }
             root.state = "offline"
             root.message = "Connection service stopped. Check the plugin dependencies."
             preview.dismiss()
             restartTimer.restart()
+        }
+    }
+    Process {
+        id: installer
+        command: ["bash", root.directory + "run-setup.sh"]
+        stdout: SplitParser {
+            onRead: line => {
+                try { root.setupMessage = JSON.parse(line).message } catch (e) {}
+            }
+        }
+        onExited: function(exitCode) {
+            root.installing = false
+            if (exitCode === 0) Qt.callLater(function() { root.retryConnection() })
+            else {
+                root.state = "setup_failed"
+                root.message = "Setup needs attention"
+                if (root.setupMessage === "Starting installation…")
+                    root.setupMessage = "Could not start setup. Install Python and use the manual command below."
+            }
         }
     }
     Timer { id: restartTimer; interval: 10000; onTriggered: bridge.running = true }
@@ -95,7 +134,7 @@ Item {
     IpcHandler {
         target: "ha-watch"
         function settings(): string { return root.shell && root.shell.summon("seigliva.ha-watch", "{}") ? "ok" : "Bar widget unavailable" }
-        function status(): string { return JSON.stringify({version: "0.5.1", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
+        function status(): string { return JSON.stringify({version: "0.6.0", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
         function demo(): string {
             preview.handle({type: "preview", serial: -1, title: "Preview test · Entrance", camera: "", duration: 20})
             return "ok"

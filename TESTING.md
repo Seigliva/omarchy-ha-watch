@@ -139,3 +139,16 @@ malformed JSON, invalid token fields and incorrect content type. Rejected login
 responses never reach the keyring; rejected refresh responses never initiate
 WebSocket authentication. Separate checks cover the exact 64 KiB boundary,
 normal responses, timeout enforcement and rejection before JSON parsing.
+
+## First-run onboarding (0.6.0)
+
+- A missing or incomplete runtime must show Finish installation rather than a
+  disabled sign-in form. No installation starts until the user clicks.
+- Installation runs the existing hash-checked setup in dependencies-only mode.
+  The wrapper reports fixed progress/errors, suppresses raw package-manager
+  output, and stops/reaps the setup process group after 180 seconds or shutdown.
+- Success must start the bridge and expose sign-in without restarting the shell.
+- Retry, missing tools and manual Check again must work without changing rules
+  or credentials. Panel closure must not interrupt the shared service's setup.
+- The service transition was exercised in an isolated Quickshell fixture with
+  an absent runtime, explicit setup and automatic ready/signed-out transition.
