@@ -39,7 +39,10 @@ Item {
         if (!shell) return
         var c = shell.shellConfig || {}
         var entries = (c.plugins || []).slice()
-        var layout = c.bar ? c.bar.layout || {} : {}
+        // Current Omarchy exposes barConfig through its scoped plugin API.
+        // shellConfig is only available on older, unrestricted shell objects.
+        var barConfig = shell.barConfig || c.bar || {}
+        var layout = barConfig.layout || {}
         for (var section of ["left", "center", "right"])
             entries = entries.concat(layout[section] || [])
         for (var entry of entries) {
@@ -84,7 +87,9 @@ Item {
     onShellChanged: loadConfig()
     Connections {
         target: root.shell
+        ignoreUnknownSignals: true
         function onShellConfigChanged() { root.loadConfig() }
+        function onBarConfigChanged() { root.loadConfig() }
     }
     Process {
         id: bridge
@@ -134,7 +139,7 @@ Item {
     IpcHandler {
         target: "ha-watch"
         function settings(): string { return root.shell && root.shell.summon("seigliva.ha-watch", "{}") ? "ok" : "Bar widget unavailable" }
-        function status(): string { return JSON.stringify({version: "0.6.0", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
+        function status(): string { return JSON.stringify({version: "0.6.1", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
         function demo(): string {
             preview.handle({type: "preview", serial: -1, title: "Preview test · Entrance", camera: "", duration: 20})
             return "ok"

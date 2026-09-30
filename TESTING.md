@@ -17,6 +17,15 @@ data directory, migration backups and conflicts, auth, sensor states, covers,
 custom messages, cooldown, and camera requests. GitHub runs it on Python 3.11
 and 3.14.
 
+When `qs` is available, the suite also runs the real QML service against a
+simulated transport. It verifies that both the current scoped `barConfig` API
+and the legacy `shellConfig` API restore the connection and rules at startup,
+and reload settings after changes. These tests are skipped without Quickshell.
+
+For restart testing, back up `shell.json` and use `omarchy restart shell`.
+Do not disable and re-enable the plugin: Omarchy removes its layout entry on
+disable, including the inline connection settings and rules.
+
 ## Reinstall on an existing desktop
 
 Before removing an installation, make a private backup of the `ha.watch` or

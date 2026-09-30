@@ -5,7 +5,7 @@
 A small camera window when something happens at home. Sign in to Home Assistant,
 choose a sensor and a camera, and let Watch handle the desktop preview.
 
-**By Seigliva · Version 0.6.0 · Early release.**
+**By Seigliva · Version 0.6.1 · Early release.**
 
 An independent community plugin, not an official Home Assistant product.
 
