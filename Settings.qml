@@ -611,7 +611,7 @@ Ui.KeyboardPanel {
                     }
 
                     Label {
-                        text: "By Seigliva · 0.6.1"
+                        text: "By Seigliva · 0.6.2"
                         color: Color.foreground
                         opacity: 0.55
                         font.pixelSize: 11

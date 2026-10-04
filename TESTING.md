@@ -161,3 +161,12 @@ normal responses, timeout enforcement and rejection before JSON parsing.
   or credentials. Panel closure must not interrupt the shared service's setup.
 - The service transition was exercised in an isolated Quickshell fixture with
   an absent runtime, explicit setup and automatic ready/signed-out transition.
+
+## Untrusted device names
+
+With Qt Quick Test installed, `test_combo_text.py` renders the actual
+`WatchComboBox` against a local HTTP request recorder. It checks that image
+markup stays literal and causes no requests, and exercises keyboard and mouse
+selection with object models, string models, and Unicode names. GitHub CI
+installs the Qt test dependencies so this regression check runs there too.
+Switching the delegate back to AutoText triggers the local image request and fails this test.
