@@ -1,18 +1,18 @@
 import QtQuick
 import QtQuick.Controls.Basic as Basic
-import qs.Commons
+import qs.Commons as Commons
 
 Basic.ComboBox {
     id: control
     implicitHeight: 32
     font.pixelSize: 13
-    palette.buttonText: Color.foreground
-    palette.text: Color.foreground
-    palette.window: Color.popups.background
-    palette.base: Color.popups.background
-    palette.button: Color.popups.background
-    palette.highlight: Qt.alpha(Color.foreground, 0.15)
-    palette.highlightedText: Color.foreground
+    palette.buttonText: Commons.Color.foreground
+    palette.text: Commons.Color.foreground
+    palette.window: Commons.Color.popups.background
+    palette.base: Commons.Color.popups.background
+    palette.button: Commons.Color.popups.background
+    palette.highlight: Qt.alpha(Commons.Color.foreground, 0.15)
+    palette.highlightedText: Commons.Color.foreground
     // Device names are untrusted text. Basic's default IconLabel delegate
     // uses AutoText, which can fetch images embedded in a name.
     delegate: Basic.ItemDelegate {
@@ -38,12 +38,12 @@ Basic.ComboBox {
         x: control.width - width - 10
         y: (control.height - height) / 2
         text: "⌄"
-        color: Color.foreground
+        color: Commons.Color.foreground
         font.pixelSize: 16
     }
     background: Rectangle {
         radius: 4
-        color: Qt.alpha(Color.foreground, control.hovered ? 0.08 : 0.035)
-        border.color: Qt.alpha(Color.foreground, control.activeFocus ? 0.6 : 0.2)
+        color: Qt.alpha(Commons.Color.foreground, control.hovered ? 0.08 : 0.035)
+        border.color: Qt.alpha(Commons.Color.foreground, control.activeFocus ? 0.6 : 0.2)
     }
 }

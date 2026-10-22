@@ -170,3 +170,12 @@ markup stays literal and causes no requests, and exercises keyboard and mouse
 selection with object models, string models, and Unicode names. GitHub CI
 installs the Qt test dependencies so this regression check runs there too.
 Switching the delegate back to AutoText triggers the local image request and fails this test.
+
+## Qt 6.12 theme compatibility (0.6.3)
+
+All plugin QML references to the Omarchy Color and Style singletons use the
+explicit Commons namespace. This avoids the QtQuick.Color name introduced in
+Qt 6.12 while retaining compatibility with earlier Qt versions. The dropdown
+rendering test checks theme foreground/background colors alongside its existing
+plain-text and selection checks. CI uses Ubuntu 24.04 for older-Qt coverage;
+the release was also tested locally on Qt 6.12.

@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import qs.Commons
+import qs.Commons as Commons
 
 PanelWindow {
     id: popup
@@ -78,23 +78,23 @@ PanelWindow {
     Timer { id: closeTimer; onTriggered: if (!popup.pinned) popup.dismiss() }
     Rectangle {
         anchors.fill: parent
-        radius: Style.cornerRadius
-        color: Color.popups.background
-        border.color: Color.popups.border
+        radius: Commons.Style.cornerRadius
+        color: Commons.Color.popups.background
+        border.color: Commons.Color.popups.border
         border.width: 1
         ColumnLayout {
             id: previewContent
             anchors.fill: parent; anchors.margins: 12; spacing: 6
             RowLayout {
                 Layout.fillWidth: true
-                Label { text: popup.heading; textFormat: Text.PlainText; color: Color.foreground; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
+                Label { text: popup.heading; textFormat: Text.PlainText; color: Commons.Color.foreground; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
                 WatchButton { text: popup.pinned ? "Unpin" : "Pin"; onClicked: { popup.pinned = !popup.pinned; service.send({type: "pin", serial: popup.serial, pinned: popup.pinned}); if (!popup.pinned) closeTimer.restart() } }
                 WatchButton { text: "×"; onClicked: popup.dismiss() }
             }
             Label {
                 id: activityLabel
                 text: popup.activityText; textFormat: Text.PlainText
-                color: Color.foreground; wrapMode: Text.Wrap
+                color: Commons.Color.foreground; wrapMode: Text.Wrap
                 Layout.fillWidth: true
                 maximumLineCount: 6; elide: Text.ElideRight
             }
@@ -121,12 +121,12 @@ PanelWindow {
                     anchors.centerIn: parent
                     visible: !popup.hasFrame
                     text: still.status === Image.Error ? "Camera image unavailable" : "Loading camera…"
-                    color: Color.foreground
+                    color: Commons.Color.foreground
                 }
             }
             RowLayout {
                 Layout.fillWidth: true
-                Label { text: popup.detail; color: Color.foreground; opacity: 0.7; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
+                Label { text: popup.detail; color: Commons.Color.foreground; opacity: 0.7; font.pixelSize: 11; Layout.fillWidth: true; elide: Text.ElideRight }
                 WatchButton { visible: popup.camera !== ""; text: popup.expanded ? "Smaller" : "Expand"; onClicked: popup.expanded = !popup.expanded }
                 WatchButton {
                     text: "Open HA"

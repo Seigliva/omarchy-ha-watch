@@ -1,7 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Ui as Ui
-import qs.Commons
+import qs.Commons as Commons
 import QtQuick.Effects
 
 Ui.BarWidget {
@@ -39,7 +39,7 @@ Ui.BarWidget {
         iconComponent: Component {
             Item {
                 Image { id: icon; anchors.fill: parent; source: Qt.resolvedUrl("assets/house-eye.svg"); visible: false; sourceSize: Qt.size(64, 64) }
-                MultiEffect { anchors.fill: parent; source: icon; colorization: 1; colorizationColor: Color.foreground }
+                MultiEffect { anchors.fill: parent; source: icon; colorization: 1; colorizationColor: Commons.Color.foreground }
             }
         }
         tooltipText: "Home Assistant Watch"

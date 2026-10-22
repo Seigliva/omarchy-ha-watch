@@ -45,6 +45,8 @@ Item {
     TestCase {
         name: "UntrustedNames"; when: windowShown
         function test_names_and_selection() {
+            compare(combo.palette.text, "#ffffff")
+            compare(combo.palette.base, "#222222")
             compare(combo.currentText, NAME)
             combo.popup.open()
             tryCompare(combo.popup, "visible", true)

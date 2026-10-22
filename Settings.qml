@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import qs.Commons
+import qs.Commons as Commons
 import qs.Ui as Ui
 import "RuleOptions.js" as RuleOptions
 
@@ -122,14 +122,14 @@ Ui.KeyboardPanel {
                         spacing: 3
                         Label {
                             text: "Home Assistant Watch"
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                             font.pixelSize: 18
                             font.bold: true
                             Layout.fillWidth: true
                         }
                         Label {
                             text: "A little window into your home."
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                             opacity: 0.55
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
@@ -147,7 +147,7 @@ Ui.KeyboardPanel {
                     Layout.fillWidth: true
                     Label {
                         text: service.paused ? "◌  Alerts paused" : (service.state === "connected" ? "●  Connected" : "○  " + service.message)
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         opacity: 0.7
                         font.pixelSize: 12
                         wrapMode: Text.WordWrap
@@ -170,7 +170,7 @@ Ui.KeyboardPanel {
                 Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: 1
-                    color: Color.foreground
+                    color: Commons.Color.foreground
                     opacity: 0.12
                 }
                 ColumnLayout {
@@ -179,20 +179,20 @@ Ui.KeyboardPanel {
                     spacing: 10
                     Label {
                         text: "Finish installation"
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         font.bold: true
                         font.pixelSize: 16
                     }
                     Label {
                         text: "Watch needs a few Python packages before you can sign in. Choose Finish installation to download and verify them. No administrator access is requested."
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         wrapMode: Text.WordWrap
                         Layout.fillWidth: true
                     }
                     Label {
                         text: service.setupMessage
                         textFormat: Text.PlainText
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         opacity: 0.75
                         wrapMode: Text.WordWrap
                         Layout.fillWidth: true
@@ -216,7 +216,7 @@ Ui.KeyboardPanel {
                     }
                     Label {
                         text: "Prefer the terminal? Run this command from any folder, then select Check again:"
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         opacity: 0.65
                         font.pixelSize: 12
                         wrapMode: Text.WordWrap
@@ -228,10 +228,10 @@ Ui.KeyboardPanel {
                         selectByMouse: true
                         wrapMode: TextEdit.Wrap
                         text: "bash '" + service.directory.replace(/'/g, "'\"'\"'") + "setup.sh' --dependencies-only"
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         font.pixelSize: 11
                         background: Rectangle {
-                            color: Qt.alpha(Color.foreground, 0.04)
+                            color: Qt.alpha(Commons.Color.foreground, 0.04)
                             radius: 4
                         }
                     }
@@ -243,7 +243,7 @@ Ui.KeyboardPanel {
                     Label {
                         visible: service.config.rules.length === 0
                         text: service.state === "connected" ? "No rules yet. Add a sensor or cover to get started." : "Open Settings to connect your Home Assistant."
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         opacity: 0.7
                         wrapMode: Text.WordWrap
                         Layout.fillWidth: true
@@ -253,9 +253,9 @@ Ui.KeyboardPanel {
                         delegate: Frame {
                             padding: 10
                             background: Rectangle {
-                                color: Qt.alpha(Color.foreground, 0.035)
+                                color: Qt.alpha(Commons.Color.foreground, 0.035)
                                 radius: 6
-                                border.color: Qt.alpha(Color.foreground, 0.12)
+                                border.color: Qt.alpha(Commons.Color.foreground, 0.12)
                             }
                             required property var modelData
                             required property int index
@@ -268,7 +268,7 @@ Ui.KeyboardPanel {
                                     Label {
                                         text: win.label(modelData.sensor)
                                         textFormat: Text.PlainText
-                                        color: Color.foreground
+                                        color: Commons.Color.foreground
                                         font.bold: true
                                         font.pixelSize: 14
                                         elide: Text.ElideRight
@@ -295,7 +295,7 @@ Ui.KeyboardPanel {
                                         spacing: 2
                                         Label {
                                             text: win.ruleSummary(modelData)
-                                            color: Color.foreground
+                                            color: Commons.Color.foreground
                                             opacity: 0.8
                                             font.pixelSize: 12
                                             elide: Text.ElideRight
@@ -304,7 +304,7 @@ Ui.KeyboardPanel {
                                         Label {
                                             text: modelData.camera ? "Camera · " + win.label(modelData.camera) : "Text notification"
                                             textFormat: Text.PlainText
-                                            color: Color.foreground
+                                            color: Commons.Color.foreground
                                             opacity: 0.55
                                             font.pixelSize: 11
                                             elide: Text.ElideRight
@@ -357,7 +357,7 @@ Ui.KeyboardPanel {
                         textFormat: Text.PlainText
                         font.pixelSize: 16
                         font.bold: true
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         wrapMode: Text.WordWrap
                         Layout.fillWidth: true
                     }
@@ -367,7 +367,7 @@ Ui.KeyboardPanel {
                         enabled: service.state === "connected"
                         Label {
                             text: "Device"
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                         }
                         WatchComboBox {
                             id: sensor
@@ -385,7 +385,7 @@ Ui.KeyboardPanel {
                         }
                         Label {
                             text: "Notify when"
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
@@ -408,14 +408,14 @@ Ui.KeyboardPanel {
                                 text: "Opening/Closing require your integration to report movement."
                                 wrapMode: Text.WordWrap
                                 Layout.fillWidth: true
-                                color: Color.foreground
+                                color: Commons.Color.foreground
                                 opacity: 0.65
                                 font.pixelSize: 12
                             }
                         }
                         Label {
                             text: "Show"
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                         }
                         WatchComboBox {
                             id: camera
@@ -433,13 +433,13 @@ Ui.KeyboardPanel {
                         }
                         Label {
                             text: "Custom text"
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
                             Label {
                                 text: "Optional. Leave blank to use the device state."
-                                color: Color.foreground
+                                color: Commons.Color.foreground
                                 opacity: 0.65
                                 font.pixelSize: 12
                                 wrapMode: Text.WordWrap
@@ -511,7 +511,7 @@ Ui.KeyboardPanel {
                     }
                     Label {
                         text: "Home Assistant"
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         font.bold: true
                     }
                     RowLayout {
@@ -549,7 +549,7 @@ Ui.KeyboardPanel {
                     }
                     Label {
                         text: "Sign in securely in your browser. Your session is saved in your system keyring."
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         opacity: 0.65
                         font.pixelSize: 12
                         wrapMode: Text.WordWrap
@@ -559,14 +559,14 @@ Ui.KeyboardPanel {
                         text: "Notifications"
                         font.pixelSize: 16
                         font.bold: true
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                     }
                     GridLayout {
                         columns: 2
                         Layout.fillWidth: true
                         Label {
                             text: "Position"
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                         }
                         WatchComboBox {
                             Layout.fillWidth: true
@@ -578,7 +578,7 @@ Ui.KeyboardPanel {
                         }
                         Label {
                             text: "Screen"
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                         }
                         WatchComboBox {
                             Layout.fillWidth: true
@@ -590,7 +590,7 @@ Ui.KeyboardPanel {
                         }
                         Label {
                             text: "Seconds visible"
-                            color: Color.foreground
+                            color: Commons.Color.foreground
                         }
                         SpinBox {
                             from: 5
@@ -603,7 +603,7 @@ Ui.KeyboardPanel {
                     }
                     Label {
                         text: "Video previews are muted, up to 10 fps. Pinned previews stop after 10 minutes. Repeated notifications for the same state are limited to one every 30 seconds. Opposite states can notify immediately."
-                        color: Color.foreground
+                        color: Commons.Color.foreground
                         opacity: 0.65
                         font.pixelSize: 12
                         wrapMode: Text.WordWrap
@@ -611,8 +611,8 @@ Ui.KeyboardPanel {
                     }
 
                     Label {
-                        text: "By Seigliva · 0.6.2"
-                        color: Color.foreground
+                        text: "By Seigliva · 0.6.3"
+                        color: Commons.Color.foreground
                         opacity: 0.55
                         font.pixelSize: 11
                     }
