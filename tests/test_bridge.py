@@ -78,6 +78,69 @@ class Integration(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.events[-1], {"type": "entities", "entities": []})
         self.assertEqual(len(self.events), 7)
 
+    async def test_remote_entity_flood_disconnects_and_clears_catalog(self):
+        base = await self.server()
+        with patch("bridge.ENTITY_COUNT_LIMIT", 3):
+            await self.bridge.configure({"url": base, "clientId": "test", "rules": []})
+            await self.wait_event("entities")
+            async with asyncio.timeout(3):
+                while not any(e.get("state") == "connected" for e in self.events):
+                    await asyncio.sleep(0.01)
+            for i in range(2):
+                ident = f"binary_sensor.flood_{i}"
+                await self.socket.send_json({"type": "event", "event": {"data": {
+                    "entity_id": ident, "new_state": {"entity_id": ident,
+                    "state": "off", "attributes": {"friendly_name": "Flood"}}}}})
+            async with asyncio.timeout(3):
+                while not any(e.get("state") == "offline" for e in self.events):
+                    await asyncio.sleep(0.01)
+            self.assertEqual(self.bridge.states, {})
+            self.assertEqual(self.bridge.state_bytes, 0)
+            self.assertEqual([e for e in self.events if e["type"] == "entities"][-1]["entities"], [])
+            self.assertTrue(any("limits" in e.get("message", "") for e in self.events))
+            self.assertTrue(all(len(e["entities"]) <= 3 for e in self.events if e["type"] == "entities"))
+
+    async def test_initial_snapshot_overflow_never_connects(self):
+        base = await self.server()
+        with patch("bridge.ENTITY_COUNT_LIMIT", 1):
+            await self.bridge.configure({"url": base, "clientId": "test"})
+            async with asyncio.timeout(3):
+                while not any(e.get("state") == "offline" for e in self.events):
+                    await asyncio.sleep(0.01)
+            self.assertFalse(any(e.get("state") == "connected" for e in self.events))
+            self.assertFalse(self.bridge.states)
+            self.assertFalse(any(e.get("entities") for e in self.events))
+
+    async def test_remote_update_aggregate_overflow_and_recovery(self):
+        base = await self.server()
+        await self.bridge.configure({"url": base, "clientId": "test"})
+        await self.wait_event("entities")
+        initial_size = self.bridge.state_bytes
+        with patch("bridge.ENTITY_BYTES_LIMIT", initial_size):
+            await self.socket.send_json({"type": "event", "event": {"data": {
+                "entity_id": "camera.front", "new_state": {"entity_id": "camera.front",
+                "state": "idle", "attributes": {"friendly_name": "x" * 512}}}}})
+            async with asyncio.timeout(3):
+                while not any(e.get("state") == "offline" for e in self.events):
+                    await asyncio.sleep(0.01)
+            self.assertFalse(self.bridge.states)
+        async with asyncio.timeout(4):
+            while sum(e.get("state") == "connected" for e in self.events) < 2:
+                await asyncio.sleep(0.01)
+        self.assertEqual(len(self.bridge.states), 2)
+        self.assertEqual(self.bridge.state_bytes, initial_size)
+
+    async def test_websocket_message_limit_closes_connection(self):
+        base = await self.server()
+        with patch("bridge.WS_MESSAGE_LIMIT", 1024):
+            await self.bridge.configure({"url": base, "clientId": "test"})
+            await self.wait_event("entities")
+            await self.socket.send_str('x' * 1025)
+            async with asyncio.timeout(3):
+                while not any(e.get("state") == "offline" for e in self.events):
+                    await asyncio.sleep(0.01)
+            self.assertFalse(self.bridge.states)
+
     async def test_opposite_states_and_event_text(self):
         base = await self.server()
         await self.bridge.configure({"url": base, "clientId": "http://127.0.0.1:1234/",

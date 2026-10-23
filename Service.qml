@@ -69,10 +69,15 @@ Item {
     }
     function handle(line) {
         try {
+            // The helper caps serialized catalogue bytes; reject oversized IPC before parsing.
+            if (line.length > 1048576) throw new Error("Response too large")
             var p = JSON.parse(line)
             if (p.type === "ready") { ready = true; loadConfig(); if (paused) send({type: "pause", paused: true}) }
             else if (p.type === "status") { state = p.state; message = p.message }
-            else if (p.type === "entities") entities = p.entities
+            else if (p.type === "entities") {
+                if (!Array.isArray(p.entities) || p.entities.length > 2048) throw new Error("Invalid catalogue")
+                entities = p.entities
+            }
             else if (p.type === "error") errorMessage = p.message
             else if (p.type === "open_url") Quickshell.execDetached(["xdg-open", p.url])
             else if (p.type === "save_connection") {
@@ -139,7 +144,7 @@ Item {
     IpcHandler {
         target: "ha-watch"
         function settings(): string { return root.shell && root.shell.summon("seigliva.ha-watch", "{}") ? "ok" : "Bar widget unavailable" }
-        function status(): string { return JSON.stringify({version: "0.6.3", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
+        function status(): string { return JSON.stringify({version: "0.6.4", pluginId: "seigliva.ha-watch", state: root.state, message: root.message, rules: root.config.rules.length, paused: root.paused}) }
         function demo(): string {
             preview.handle({type: "preview", serial: -1, title: "Preview test · Entrance", camera: "", duration: 20})
             return "ok"

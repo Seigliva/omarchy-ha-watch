@@ -16,6 +16,41 @@ from camera_media import CameraMedia
 
 
 TOKEN_RESPONSE_LIMIT = 64 * 1024
+WS_MESSAGE_LIMIT = 4 * 1024 * 1024
+ENTITY_COUNT_LIMIT = 2048
+ENTITY_BYTES_LIMIT = 1024 * 1024
+CATALOG_BYTES_LIMIT = 1024 * 1024
+ENTITY_DOMAINS = ("camera.", "binary_sensor.", "input_boolean.", "cover.")
+
+
+class EntityLimitError(ValueError):
+    pass
+
+
+def bounded_text(value, limit):
+    if not isinstance(value, str):
+        raise EntityLimitError("Invalid entity field.")
+    if len(value) > limit or len(value.encode("utf-8")) > limit:
+        raise EntityLimitError("Entity field exceeds its size limit.")
+    return value
+
+
+def project_state(value):
+    """Retain only the fixed set of fields used by selectors and alerts."""
+    if not isinstance(value, dict):
+        raise EntityLimitError("Invalid entity state.")
+    ident = bounded_text(value.get("entity_id"), 256)
+    if not entity(ident):
+        raise EntityLimitError("Invalid entity ID.")
+    if not ident.startswith(ENTITY_DOMAINS):
+        return None
+    attrs = value.get("attributes", {})
+    if not isinstance(attrs, dict):
+        raise EntityLimitError("Invalid entity attributes.")
+    return {"entity_id": ident, "state": bounded_text(value.get("state", ""), 64),
+            "attributes": {
+                "friendly_name": bounded_text(attrs.get("friendly_name", ident), 512),
+                "device_class": bounded_text(attrs.get("device_class", ""), 64)}}
 
 
 async def read_token_response(response, *, require_refresh=False):
@@ -126,6 +161,8 @@ class Bridge:
         self.last_alert = {}
         self.paused_until = 0
         self.states = {}
+        self.state_sizes = {}
+        self.state_bytes = 0
         self.entity_catalog = None
         self.auth_runner = None
         self.auth_state = None
@@ -173,6 +210,8 @@ class Bridge:
         self.connection = None
         self.access = ""
         self.states = {}
+        self.state_sizes = {}
+        self.state_bytes = 0
         self.entity_catalog = None
         self.preview_serial += 1
         emit("clear")
@@ -209,7 +248,8 @@ class Bridge:
                     response.raise_for_status()
                     token = await read_token_response(response)
                 self.access = token["access_token"]
-                async with self.http.ws_connect(base + "/api/websocket", heartbeat=30) as ws:
+                async with self.http.ws_connect(base + "/api/websocket", heartbeat=30,
+                                                max_msg_size=WS_MESSAGE_LIMIT, compress=0) as ws:
                     self.ws = ws
                     if (await ws.receive_json())["type"] != "auth_required":
                         raise RuntimeError("Unexpected Home Assistant response.")
@@ -220,7 +260,10 @@ class Bridge:
                     try:
                         await self.rpc("subscribe_events", event_type="state_changed")
                         states = await self.rpc("get_states")
-                        self.states = {s["entity_id"]: s for s in states}
+                        try:
+                            self.load_states(states)
+                        finally:
+                            del states
                         self.emit_entities()
                         emit("status", state="connected", message="Connected to Home Assistant")
                         delay = 2
@@ -231,9 +274,16 @@ class Bridge:
                             await reader
             except asyncio.CancelledError:
                 raise
+            except EntityLimitError:
+                emit("status", state="offline", message="Home Assistant entity data exceeds Watch limits or is invalid. Retrying automatically…")
             except Exception:
                 emit("status", state="offline", message="Cannot reach Home Assistant. Retrying automatically…")
             finally:
+                self.states.clear()
+                self.state_sizes.clear()
+                self.state_bytes = 0
+                self.entity_catalog = None
+                emit("entities", entities=[])
                 self.ws = None
                 self.access = ""
                 for future in list(self.pending.values()):
@@ -242,7 +292,51 @@ class Bridge:
             await asyncio.sleep(delay)
             delay = min(delay * 2, 60)
 
+    def update_state(self, ident, value):
+        bounded_text(ident, 256)
+        if not entity(ident):
+            raise EntityLimitError("Invalid entity ID.")
+        if value is None:
+            self.states.pop(ident, None)
+            self.state_bytes -= self.state_sizes.pop(ident, 0)
+            return
+        if not isinstance(value, dict) or value.get("entity_id") != ident:
+            raise EntityLimitError("Mismatched entity ID.")
+        state = project_state(value)
+        if state is None:
+            return
+        size = len(json.dumps(state).encode("utf-8"))
+        total = self.state_bytes - self.state_sizes.get(ident, 0) + size
+        if ((ident not in self.states and len(self.states) >= ENTITY_COUNT_LIMIT)
+                or total > ENTITY_BYTES_LIMIT):
+            raise EntityLimitError("Entity catalogue exceeds its limits.")
+        self.states[ident] = state
+        self.state_sizes[ident] = size
+        self.state_bytes = total
+
+    def load_states(self, states):
+        if not isinstance(states, list):
+            raise EntityLimitError("Invalid entity catalogue.")
+        self.states.clear()
+        self.state_sizes.clear()
+        self.state_bytes = 0
+        for state in states:
+            if not isinstance(state, dict):
+                raise EntityLimitError("Invalid entity state.")
+            self.update_state(state.get("entity_id"), state)
+
     async def read_ws(self, ws):
+        try:
+            await self.consume_ws(ws)
+            raise RuntimeError("Home Assistant disconnected.")
+        except Exception as exc:
+            # Wake an in-flight initial RPC immediately when the reader rejects data.
+            for future in list(self.pending.values()):
+                if not future.done():
+                    future.set_exception(exc)
+            raise
+
+    async def consume_ws(self, ws):
         async for message in ws:
             if message.type != aiohttp.WSMsgType.TEXT:
                 continue
@@ -257,12 +351,12 @@ class Bridge:
             elif data.get("type") == "event":
                 event = data.get("event", {}).get("data", {})
                 ident = event.get("entity_id", "")
-                if event.get("new_state"):
-                    self.states[ident] = event["new_state"]
-                else:
-                    self.states.pop(ident, None)
-                if ident.startswith(("camera.", "binary_sensor.", "input_boolean.", "cover.")):
-                    self.emit_entities()
+                self.update_state(ident, event.get("new_state"))
+                if not ident.startswith(ENTITY_DOMAINS):
+                    continue
+                self.emit_entities()
+                # Never retain arbitrary remote attributes in queued preview tasks.
+                event = {**event, "new_state": self.states.get(ident)}
                 if time.monotonic() < self.paused_until:
                     continue
                 for rule in self.config.get("rules", []):
@@ -282,6 +376,9 @@ class Bridge:
         # Replacing that model on each state event resets an open dropdown.
         rows.sort(key=lambda x: (x["name"].casefold(), x["id"]))
         if rows != self.entity_catalog:
+            if (len(rows) > ENTITY_COUNT_LIMIT or
+                    len(json.dumps({"type": "entities", "entities": rows}).encode("utf-8")) > CATALOG_BYTES_LIMIT):
+                raise EntityLimitError("Entity output exceeds its limits.")
             self.entity_catalog = rows
             emit("entities", entities=rows)
 

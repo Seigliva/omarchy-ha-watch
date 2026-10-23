@@ -5,7 +5,7 @@
 A small camera window when something happens at home. Sign in to Home Assistant,
 choose a sensor and a camera, and let Watch handle the desktop preview.
 
-**By Seigliva · Version 0.6.3 · Early release.**
+**By Seigliva · Version 0.6.4 · Early release.**
 
 An independent community plugin, not an official Home Assistant product.
 
@@ -270,3 +270,19 @@ writes the lock only after all downloads verify. It never runs during installati
 and does not update versions. Review any changed pins/artifacts, test a fresh
 installation, and commit the lock before publishing. Hashes bind the reviewed
 files; they are not a security audit of third-party code.
+
+## Entity data limits (0.6.4)
+
+Watch retains only camera, binary sensor, input boolean and cover entities,
+with at most 2,048 entities and 1 MiB of serialized retained state. It keeps only
+the ID, state, friendly name and device class. IDs, names, states and device
+classes are limited to 256, 512, 64 and 64 UTF-8 bytes respectively.
+The full selector message is limited to 1 MiB; the shell also checks its length
+before JSON parsing and rejects catalogues above 2,048 entries.
+WebSocket messages have an explicit 4 MiB limit, with compression disabled.
+These are data limits, not an exact cap on Python or Qt process memory.
+
+If relevant entity data is invalid or exceeds these limits, Watch disconnects,
+clears its catalogue and shows an offline message. It retries automatically;
+normal operation resumes when the server returns data within the limits.
+Large installations exceeding these limits are currently unsupported.

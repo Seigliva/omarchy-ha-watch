@@ -179,3 +179,19 @@ Qt 6.12 while retaining compatibility with earlier Qt versions. The dropdown
 rendering test checks theme foreground/background colors alongside its existing
 plain-text and selection checks. CI uses Ubuntu 24.04 for older-Qt coverage;
 the release was also tested locally on Qt 6.12.
+
+## Entity catalogue bounds (0.6.4)
+
+Regression tests cover initial snapshots and successive new-entity events,
+count and aggregate-byte boundaries, updates, deletion/accounting, ignored
+domains/attributes, UTF-8 field limits and bounded serialized output. A real
+local WebSocket fixture verifies rejection, catalogue clearing, reconnection
+and the message-size cap. The actual QML service fixture verifies that oversized
+IPC and too many catalogue rows do not replace the current selector model.
+Existing camera, notifications, cooldown and selector-stability tests still run.
+
+All 53 tests passed locally, including the Quickshell fixtures. A separate
+read-only connection to the maintainer's real HA loaded 261 relevant entities
+(40,680 serialized bytes) and remained connected. Saved settings were unchanged;
+the smoke-test connection had no notification rules. Plugin validation and shell
+syntax checks passed.

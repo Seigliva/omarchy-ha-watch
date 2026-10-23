@@ -43,6 +43,12 @@ ShellRoot {
             }
             if (phase === 0) { phase = 1; api.PROP = SECOND; return }
             if (service.config.duration !== 42) { console.log("FAIL: update missing"); Qt.quit(); return }
+            service.handle(JSON.stringify({type: "entities", entities: [{id: "camera.test", name: "Test", deviceClass: ""}]}))
+            service.handle(JSON.stringify({type: "entities", entities: new Array(2049).fill({})}))
+            if (service.entities.length !== 1 || !service.errorMessage) { console.log("FAIL: catalogue count guard"); Qt.quit(); return }
+            service.errorMessage = ""
+            service.handle(JSON.stringify({type: "entities", entities: [], padding: "x".repeat(1048576)}))
+            if (service.entities.length !== 1 || !service.errorMessage) { console.log("FAIL: IPC size guard"); Qt.quit(); return }
             console.log("PASS: restored and updated"); Qt.quit()
         }
     }
