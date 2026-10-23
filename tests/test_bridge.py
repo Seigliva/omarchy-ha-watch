@@ -135,7 +135,9 @@ class Integration(unittest.IsolatedAsyncioTestCase):
         with patch("bridge.WS_MESSAGE_LIMIT", 1024):
             await self.bridge.configure({"url": base, "clientId": "test"})
             await self.wait_event("entities")
-            await self.socket.send_str('x' * 1025)
+            # Valid, otherwise ignored JSON: only the transport size cap should
+            # disconnect us, rather than an unrelated JSON parser failure.
+            await self.socket.send_json({"type": "noop", "padding": "x" * 1025})
             async with asyncio.timeout(3):
                 while not any(e.get("state") == "offline" for e in self.events):
                     await asyncio.sleep(0.01)
